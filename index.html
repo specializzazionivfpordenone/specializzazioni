@@ -177,7 +177,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:53</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:57</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -400,8 +400,8 @@ var ISTRUTTORE_DI = {
   // Puntellamenti: Istruttore Professionale
   puntellamenti: ['ist_prof'],
   tas1: ['ist_tas'], tas2: ['ist_tas'],
-  nbcr0: ['ist_nbcr'], nbcr1: ['ist_nbcr'], nbcr2: ['ist_nbcr'], nbcr3: ['ist_nbcr'], gpl_light: ['ist_nbcr'], lpg: ['ist_nbcr'],
-  radiometria: ['ist_nbcr'], nucleo_nr: ['ist_nbcr']
+  // NBCR: l'istruttore insegna solo i livelli 0-3 (non Gpl Light, LPG, Radiometria, Nucleo Avanzato NR)
+  nbcr0: ['ist_nbcr'], nbcr1: ['ist_nbcr'], nbcr2: ['ist_nbcr'], nbcr3: ['ist_nbcr']
 };
 function istruttoriDi(key) { return ISTRUTTORE_DI.hasOwnProperty(key) ? ISTRUTTORE_DI[key].slice() : []; }
 function chiaveIstruttore(key) { return istruttoriDi(key)[0] || null; }
