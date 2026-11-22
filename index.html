@@ -12,7 +12,7 @@
   html, body { overflow:hidden; height:100%; }   /* la pagina resta ferma: scorre solo la tabella */   /* la pagina non scorre mai di lato: scorre solo la tabella */
   body { margin:0; font-family: "Segoe UI", Roboto, Arial, sans-serif; color:var(--testo); background:var(--fondo); font-size:14px; }
   header { background:var(--rosso); color:#fff; padding:4px 14px; display:flex; flex-wrap:nowrap; align-items:center; gap:4px 14px; }
-  header > div:first-child { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; flex:0 1 auto; }
+  header > div { min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; flex:0 1 auto; }
   header .pill, header button { flex:0 0 auto; white-space:nowrap; }
   header img.logo { height:28px; width:28px; margin:-2px -6px -2px -4px; border-radius:50%; background:#fff; box-shadow:0 0 0 1.5px #fff; flex:none; }
   header h1 { font-size:16px; margin:0; font-weight:600; letter-spacing:.2px; display:inline; }
@@ -89,6 +89,7 @@
   tr.persona:hover td { background:#F7FAFF; }
   tr.nuova td { font-style:italic; color:var(--tenue); }
   .op { color:var(--ok); } .sosp { color:var(--ko); } .nd { color:#8a8f98; }
+  .lim { color:#D35400; font-weight:900; }
   td.cella .op, td.cella .sosp, .legenda-breve .op, .legenda-breve .sosp { display:inline-block; min-width:17px; line-height:17px; padding:0 2px; border-radius:3px; color:#fff; font-weight:900; text-align:center; }
   td.cella .op, .legenda-breve .op { background:#12A537; box-shadow:inset 0 0 0 1px #0A7A27; }
   td.cella .sosp, .legenda-breve .sosp { background:#E3120B; box-shadow:inset 0 0 0 1px #A90C07; }
@@ -121,12 +122,14 @@
   .menu-filtro .scelta .ic.vx { background:#12A537; color:#fff; border-color:#0A7A27; }
   .menu-filtro .scelta .ic.rx { background:#E3120B; color:#fff; border-color:#A90C07; }
   .menu-filtro .scelta .ic.vuota { color:transparent; }
+  .menu-filtro .scelta .ic.li { color:#D35400; border-color:#D35400; }
   .menu-filtro .scelta .num { margin-left:auto; white-space:nowrap; color:var(--tenue); font-size:13px; }
   .menu-filtro .scelta .num b { color:var(--testo); font-size:15px; }
   .menu-filtro .togli { display:block; width:calc(100% - 20px); margin:10px 10px 0; padding:8px; border:none; border-radius:8px; background:var(--rosso); color:#fff; font-weight:700; font-size:14px; cursor:pointer; }
   .menu-filtro .nota { padding:8px 14px 0; font-size:12px; color:var(--tenue); }
   th.freccia button.attivo.m-si, th.freccia button.attivo.m-no, th.freccia button.attivo.m-op, th.freccia button.attivo.m-sosp { font-weight:900; color:#fff; border-radius:3px; }
   th.freccia button.attivo.m-si { background:#1d2330; } th.freccia button.attivo.m-no { background:#6b7280; }
+  th.freccia button.attivo.m-lim { background:#D35400; font-weight:900; color:#fff; border-radius:3px; }
   th.freccia button.attivo.m-op { background:#12A537; } th.freccia button.attivo.m-sosp { background:#E3120B; }
   th.freccia { top:148px; padding:1px 0; text-align:center; background:#f1f3f6; }
   th.freccia button { border:1px solid var(--bordo); background:#fff; border-radius:4px; padding:0 3px; font-size:10px; line-height:14px; color:#555; }
@@ -171,7 +174,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6">v. 22/11 10:52</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:36</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -193,7 +196,7 @@
   <button id="bAzzera">✕ Togli tutti i filtri</button>
   <button id="bIstruttori">Istruttori ▶</button>
   <span id="conteggio" style="font-size:13px;color:var(--tenue)"></span>
-  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Prospetto Disponibilità»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · clic sulla X per i dettagli</span>
+  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · clic sulla X per i dettagli</span>
 </section>
 <div id="adminBar" class="admin-bar" style="display:none"></div>
 <div id="avvisoManuale" class="avviso" style="display:none"></div>
@@ -239,17 +242,17 @@
   <div id="stInfo" style="font-size:13px;margin-bottom:10px"></div>
   <div class="riga"><label><input type="checkbox" id="stCorso"> Corso fatto (X)</label></div>
   <div class="riga" id="stRigaStato"><label>Stato operativo</label>
-    <select id="stStato"><option value="">Come dal «Prospetto Disponibilità»</option><option value="op">Operativo (impostato a mano)</option><option value="sosp">NON operativo (impostato a mano)</option></select>
-    <span style="font-size:12px;color:var(--tenue)">Lo stato impostato a mano (segnato M) vale fino al prossimo controllo del «Prospetto Disponibilità», che lo sostituisce.</span></div>
+    <select id="stStato"><option value="">Come dal «Personale Operativo Specializzato»</option><option value="op">Operativo (impostato a mano)</option><option value="sosp">NON operativo (impostato a mano)</option></select>
+    <span style="font-size:12px;color:var(--tenue)">Lo stato impostato a mano (segnato M) vale fino al prossimo controllo del «Personale Operativo Specializzato», che lo sostituisce.</span></div>
   <div class="bottoni"><button data-chiudi="vStato">Annulla</button><button class="primario" id="stOk">OK</button></div>
 </div></div>
 
 <div class="velo" id="vSuper"><div class="finestra larga">
   <h2>Pannello super-amministratore</h2>
-  <div class="sezione"><h3>Controllo sul «Prospetto Disponibilità»</h3>
+  <div class="sezione"><h3>Controllo sul «Personale Operativo Specializzato»</h3>
     <div id="suControllo" style="font-size:13px"></div>
     <button id="suControlla" style="margin-top:6px">Controlla ora</button> <span style="font-size:12px;color:var(--tenue)">(può richiedere fino a 5 minuti)</span></div>
-  <div class="sezione"><h3>Nomi del «Prospetto Disponibilità» da abbinare</h3><div id="suNomi" style="font-size:13px"></div></div>
+  <div class="sezione"><h3>Nomi del «Personale Operativo Specializzato» da abbinare</h3><div id="suNomi" style="font-size:13px"></div></div>
   <div class="sezione"><h3>PIN</h3>
     <select id="suPinRuolo"><option value="A">Turno A</option><option value="B">Turno B</option><option value="C">Turno C</option><option value="D">Turno D</option><option value="SUPER">Super-amministratore</option></select>
     <input id="suPin" placeholder="Nuovo PIN (4-12 lettere/numeri)" style="width:240px" autocapitalize="off"> <button id="suPinOk">Cambia PIN</button></div>
@@ -273,11 +276,17 @@ function haSpec(p, key, soloOperativi, chiaviGoogle) {
   return !!(p.spec && p.spec[key]);
 }
 
-/** Filtro di una colonna, come in Excel: 'si' = ha la X, 'op' = X verde, 'sosp' = X rossa, 'no' = senza X, 'tutti' = nessun filtro. */
+/** Valore "L" = ha la specializzazione ma è Limitato (es. patente con limitazioni). Solo colonne non ●. */
+function eLimitato(v) { return String(v || '').toUpperCase() === 'L'; }
+
+/** Filtro di una colonna, come in Excel: 'si' = ha la X (piena), 'lim' = ha la L (limitato),
+ *  'op' = X verde, 'sosp' = X rossa, 'no' = né X né L, 'tutti' = nessun filtro. */
 function passaColonna(p, key, modo, chiaviGoogle) {
   var g = chiaviGoogle.indexOf(key) >= 0, st = g && p.stato ? p.stato[key] : null;
-  var ha = !!(p.spec && p.spec[key]) || !!st;
-  if (modo === 'si') return ha;
+  var v = p.spec ? p.spec[key] : null;
+  var ha = !!v || !!st, lim = !g && eLimitato(v);
+  if (modo === 'si') return ha && !lim;
+  if (modo === 'lim') return lim;
   if (modo === 'no') return !ha;
   if (modo === 'op') return !!st && st.s === 'op';
   if (modo === 'sosp') return !!st && st.s === 'sosp';
@@ -286,8 +295,8 @@ function passaColonna(p, key, modo, chiaviGoogle) {
 
 /** Quante persone corrispondono a ciascuna scelta del menu di una colonna. */
 function contaModi(persone, key, chiaviGoogle) {
-  var c = { tutti: persone.length, si: 0, no: 0, op: 0, sosp: 0 };
-  persone.forEach(function (p) { ['si', 'no', 'op', 'sosp'].forEach(function (m) { if (passaColonna(p, key, m, chiaviGoogle)) c[m]++; }); });
+  var c = { tutti: persone.length, si: 0, lim: 0, no: 0, op: 0, sosp: 0 };
+  persone.forEach(function (p) { ['si', 'lim', 'no', 'op', 'sosp'].forEach(function (m) { if (passaColonna(p, key, m, chiaviGoogle)) c[m]++; }); });
   return c;
 }
 
@@ -436,13 +445,18 @@ function turnoInServizio(quando) {
     return pend.mod[p.id];
   }
 
+  // Data breve per la barra rossa: «22/11 alle 13:35» (la data completa resta nel pannello e nei dettagli).
+  function fmtBreve(iso) {
+    try { var d = new Date(iso); return d.toLocaleDateString('it-IT', { timeZone: 'Europe/Rome', day: '2-digit', month: '2-digit' }) + ' alle ' + d.toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' }); }
+    catch (e) { return fmt(iso); }
+  }
   function renderTestata() {
     $('prospetto').textContent = 'Prospetto turni di riferimento: ' + (D.config.prospetto || '—');
     var s = semaforoAttuale(), c = D.config.controllo, txt;
-    if (!c) txt = 'Controllo del «Prospetto Disponibilità» mai eseguito';
-    else if (s === 'verde') txt = '«Prospetto Disponibilità» controllato il ' + fmt(c.quando);
+    if (!c) txt = 'Controllo del «Personale Operativo Specializzato» mai eseguito';
+    else if (s === 'verde') txt = '«Personale Operativo Specializzato» controllato il ' + fmtBreve(c.quando);
     else if (s === 'arancione') txt = 'Controllo parziale del ' + fmt(c.quando);
-    else txt = '«Prospetto Disponibilità» NON aggiornato (ultimo controllo: ' + fmt(c.quando) + ')';
+    else txt = '«Personale Operativo Specializzato» NON aggiornato (ultimo controllo: ' + fmt(c.quando) + ')';
     $('semaforo').innerHTML = '<span class="pall ' + s + '"></span><span>' + esc(txt) + '</span>';
     $('schede').innerHTML = D.turniElenco.map(function (t) { return '<button data-t="' + t + '" class="' + (t === F.turno ? 'attiva' : '') + '">Turno ' + t + '</button>'; }).join('');
     var u = D.turni[F.turno] && D.turni[F.turno].ultimaModifica;
@@ -456,7 +470,7 @@ function turnoInServizio(quando) {
     if (ruolo && (ruolo === 'SUPER' || ruolo === F.turno)) {
       ab.style.display = 'flex';
       ab.innerHTML = '<strong>Modalità amministratore — ' + (ruolo === 'SUPER' ? 'tutti i turni' : 'Turno ' + ruolo) + '</strong>' +
-        '<span>Clicca su una casella e scegli <b>Metti X</b> / <b>Togli X</b>, oppure usa la tastiera: <b>frecce</b> per muoverti, <b>X</b> per mettere, <b>Canc</b> per togliere.</span><button id="bNuova">+ Inserisci personale</button>';
+        '<span>Clicca su una casella e scegli <b>Metti X</b> / <b>Metti L</b> (limitato) / <b>Togli</b>, oppure usa la tastiera: <b>frecce</b> per muoverti, <b>X</b> o <b>L</b> per mettere, <b>Canc</b> per togliere.</span><button id="bNuova">+ Inserisci personale</button>';
       $('bNuova').onclick = apriInserisci;
     } else if (ruolo) {
       ab.style.display = 'flex';
@@ -502,7 +516,8 @@ function turnoInServizio(quando) {
       if (modificabile) cls += ' mod';
     } else {
       var v = p.spec[c.key];
-      if (v) html = '<span' + (c.coloreX ? ' style="color:' + c.coloreX + '"' : '') + '>' + esc(v) + '</span>';
+      if (eLimitato(v)) { html = '<span class="lim">L</span>'; titolo += ': limitato'; }
+      else if (v) html = '<span' + (c.coloreX ? ' style="color:' + c.coloreX + '"' : '') + '>' + esc(v) + '</span>';
       if (modificabile) cls += ' mod';
     }
     if (p._cambiata && ((p._cambiata.spec || {}).hasOwnProperty(c.key) || (p._cambiata.stato || {}).hasOwnProperty(c.key))) cls += ' cambiata';
@@ -513,8 +528,8 @@ function turnoInServizio(quando) {
   }
 
   var NOMI_MODO = { si: 'con X', no: 'senza X', op: 'operativi (X verde)', sosp: 'NON operativi (X rossa)' };
-  var FRASE_MODO = { si: 'Solo chi HA la X', no: 'Solo chi NON ha la X', op: 'Solo OPERATIVI (X verde)', sosp: 'Solo NON operativi (X rossa)' };
-  var SIMBOLO_MODO = { si: 'X', no: '–', op: 'X', sosp: 'X' };
+  var FRASE_MODO = { si: 'Solo chi HA la X', lim: 'Solo chi ha la L (limitato)', no: 'Solo chi NON ha la X', op: 'Solo OPERATIVI (X verde)', sosp: 'Solo NON operativi (X rossa)' };
+  var SIMBOLO_MODO = { si: 'X', lim: 'L', no: '–', op: 'X', sosp: 'X' };
   // Persone del turno con tutti i filtri attivi tranne quello della colonna indicata (per i conteggi nei menu).
   function baseConteggio(escludi) {
     var col = {}; Object.keys(F.colonne).forEach(function (k) { if (k !== escludi) col[k] = F.colonne[k]; });
@@ -528,9 +543,9 @@ function turnoInServizio(quando) {
         D.qualifiche.map(function (q) { return '<label><input type="checkbox" data-q="' + q + '"' + (F.qualifiche.indexOf(q) >= 0 ? ' checked' : '') + '> ' + q + ' <span class="n">(' + nq(q) + ')</span></label>'; }).join('');
     } else {
       var cur = F.colonne[k] || '', cnt = contaModi(baseConteggio(k), k, D.chiaviGoogle);
-      var ic = { si: '<span class="ic">X</span>', no: '<span class="ic vuota">X</span>', op: '<span class="ic vx">X</span>', sosp: '<span class="ic rx">X</span>' };
+      var ic = { lim: '<span class="ic li">L</span>', si: '<span class="ic">X</span>', no: '<span class="ic vuota">X</span>', op: '<span class="ic vx">X</span>', sosp: '<span class="ic rx">X</span>' };
       var opz = isGoogle(k) ? [['op', 'Mostra solo gli <b>OPERATIVI</b> (X verde)'], ['sosp', 'Mostra solo i <b>NON operativi</b> (X rossa)'], ['si', 'Mostra <b>tutti quelli con la X</b> (verde, rossa o grigia)'], ['no', 'Mostra solo chi <b>NON ha la X</b>']]
-                            : [['si', 'Mostra solo chi <b>HA la X</b>'], ['no', 'Mostra solo chi <b>NON ha la X</b>']];
+                            : [['si', 'Mostra solo chi <b>HA la X</b>'], ['lim', 'Mostra solo chi ha la <b>L</b> (limitato)'], ['no', 'Mostra solo chi <b>NON ha</b> né X né L']];
       h = '<div class="tit2">' + esc(etichetta(k)) + '</div><div class="dom">Chi vuoi vedere nella tabella?</div>' +
         opz.map(function (o) { return '<button type="button" class="scelta' + (o[0] === cur ? ' sc' : '') + '" data-m="' + o[0] + '">' + ic[o[0]] + '<span>' + o[1] + '</span><span class="num"><b>' + cnt[o[0]] + '</b> ' + (cnt[o[0]] === 1 ? 'persona' : 'persone') + '</span></button>'; }).join('') +
         (cur ? '<button type="button" class="togli" data-m="">✕ Togli questo filtro (mostra tutti)</button>' : '') +
@@ -563,7 +578,7 @@ function turnoInServizio(quando) {
     $('menuFiltro').style.display = 'none'; render();
   }
   function descriviStato(st) {
-    if (!st) return 'inserito a mano dall\'amministratore, in attesa del prossimo controllo del «Prospetto Disponibilità»';
+    if (!st) return 'inserito a mano dall\'amministratore, in attesa del prossimo controllo del «Personale Operativo Specializzato»';
     return (st.s === 'op' ? 'OPERATIVO' : 'corso fatto ma NON operativo (sospeso / non mantenuto)') + (st.m ? ' — impostato a mano dall\'amministratore' : '');
   }
   function renderTabella() {
@@ -579,7 +594,7 @@ function turnoInServizio(quando) {
     var h = '<table><thead><tr><th class="fisso c-qual" rowspan="2">Qual.</th><th class="fisso c-nome" rowspan="2">Cognome e Nome</th>' + (adminQui ? '<th class="fisso c-az" rowspan="3"></th>' : '');
     gruppi.forEach(function (g) { var ist = g.gruppo === 'Istruttori'; h += '<th colspan="' + g.n + '" class="' + (ist ? 'ist-inizio' : 'inizio-gruppo') + '" style="color:' + g.colore + '">' + esc(ist ? 'Istruttori ▶' : (g.gruppo || '')) + '</th>'; });
     h += '</tr><tr>';
-    vis.forEach(function (c) { var scelta = !!colAtt()[c.key], dim = Object.keys(colAtt()).length && !scelta; h += '<th class="vert' + (dim ? ' tenue' : '') + (scelta ? ' scelta' : '') + (c.key === 'ist_prof' ? ' ist-inizio' : '') + (INIZI[c.key] ? ' inizio-gruppo' : '') + '" data-k="' + c.key + '" title="Filtra ' + esc(etichetta(c.key)) + '" style="color:' + c.coloreGruppo + '"><span class="vt">' + esc(c.etichetta) + (isGoogle(c.key) ? ' ●' : '') + '</span></th>'; });
+    vis.forEach(function (c) { var scelta = !!colAtt()[c.key], dim = Object.keys(colAtt()).length && !scelta; h += '<th class="vert' + (dim ? ' tenue' : '') + (scelta ? ' scelta' : '') + (c.key === 'ist_prof' ? ' ist-inizio' : '') + (INIZI[c.key] ? ' inizio-gruppo' : '') + '" data-k="' + c.key + '" title="Filtra ' + esc(etichetta(c.key)) + '" style="color:' + (c.coloreX || c.coloreGruppo) + '"><span class="vt">' + esc(c.etichetta) + (isGoogle(c.key) ? ' ●' : '') + '</span></th>'; });
     h += '</tr><tr><th class="fisso c-qual freccia"><button data-filtro="__qual" class="' + (F.qualifiche.length && !F.solo ? 'attivo' : '') + '" title="' + (F.qualifiche.length ? 'Filtro attivo: ' + esc(F.qualifiche.join(', ')) + ' — doppio clic per toglierlo' : 'Scegli quali qualifiche vedere') + '">▼</button></th><th class="fisso c-nome freccia"></th>';
     vis.forEach(function (c) { h += '<th class="freccia' + (c.key === 'ist_prof' ? ' ist-inizio' : '') + (INIZI[c.key] ? ' inizio-gruppo' : '') + '"><button data-filtro="' + c.key + '" class="' + (colAtt()[c.key] ? 'attivo m-' + colAtt()[c.key] : '') + '" title="' + (colAtt()[c.key] ? esc(FRASE_MODO[colAtt()[c.key]]) + ' — doppio clic per togliere il filtro' : 'Clic: scegli chi vedere (con X / senza X)') + '">' + (colAtt()[c.key] ? SIMBOLO_MODO[colAtt()[c.key]] : '▼') + '</button></th>'; });
     h += '</tr></thead><tbody>';
@@ -617,9 +632,9 @@ function turnoInServizio(quando) {
       f.className = 'fumetto ' + (st ? st.s : '');
       f.innerHTML = '<b>' + esc(p.qualifica + ' ' + p.nome) + '</b>' + esc(etichetta(k)) + ': <b class="' + (st ? st.s : 'nd') + '" style="display:inline">' +
         esc(st ? (st.s === 'op' ? 'operativo' : 'NON operativo') : 'in attesa di controllo') + '</b><br>' +
-        esc(st ? (st.s === 'op' ? 'Ha il corso ed è in regola con i mantenimenti.' : 'Ha fatto il corso ma al momento non è operativo (sospeso o mantenimento non fatto).') : 'Segnato a mano dall\'amministratore: il prossimo controllo del «Prospetto Disponibilità» lo confermerà (verde o rosso) o lo toglierà.') +
+        esc(st ? (st.s === 'op' ? 'Ha il corso ed è in regola con i mantenimenti.' : 'Ha fatto il corso ma al momento non è operativo (sospeso o mantenimento non fatto).') : 'Segnato a mano dall\'amministratore: il prossimo controllo del «Personale Operativo Specializzato» lo confermerà (verde o rosso) o lo toglierà.') +
         (st && st.m ? '<br><i>Stato impostato a mano dall\'amministratore.</i>' : '') +
-        '<br><span style="color:var(--tenue);font-size:12px">' + (c ? 'Dato dal file «Prospetto Disponibilità», controllo del ' + esc(fmt(c.quando)) : 'Controllo mai eseguito') + '</span>';
+        '<br><span style="color:var(--tenue);font-size:12px">' + (c ? 'Dato dal file «Personale Operativo Specializzato», controllo del ' + esc(fmt(c.quando)) : 'Controllo mai eseguito') + '</span>';
       f.style.display = 'block';
       var x = Math.min(rc.left, window.innerWidth - f.offsetWidth - 8), y = rc.bottom + 6;
       if (y + f.offsetHeight > window.innerHeight) y = rc.top - f.offsetHeight - 6;
@@ -800,9 +815,9 @@ function turnoInServizio(quando) {
     if (!conMenu) { pc.style.display = 'none'; return; }
     var p = vista().filter(function (x) { return x.id === sel.id; })[0];
     pc.innerHTML = '<div class="tit">' + esc(p.nome) + ' — ' + esc(etichetta(sel.k)) + '</div>' +
-      '<button data-v="X" class="primario">✔ Metti X</button> <button data-v="">✖ Togli X</button>' +
-      (isGoogle(sel.k) ? ' <button data-stato="1" title="Operativo / non operativo impostato a mano">Stato…</button><div class="aiuto">Colonna ● : la X messa a mano resta <b>grigia</b> finché il «Prospetto Disponibilità» non la conferma (verde o rossa).</div>' : '') +
-      '<div class="aiuto">Tastiera: X = metti · Canc = togli · frecce = sposta · Esc = chiudi</div>';
+      '<button data-v="X" class="primario">✔ Metti X</button> ' + (isGoogle(sel.k) ? '' : '<button data-v="L" title="Ha la specializzazione ma è limitato (es. patente con limitazioni)">Metti <b class="lim">L</b> limitato</button> ') + '<button data-v="">✖ Togli</button>' +
+      (isGoogle(sel.k) ? ' <button data-stato="1" title="Operativo / non operativo impostato a mano">Stato…</button><div class="aiuto">Colonna ● : la X messa a mano resta <b>grigia</b> finché il «Personale Operativo Specializzato» non la conferma (verde o rossa).</div>' : '') +
+      '<div class="aiuto">Tastiera: X = metti' + (isGoogle(sel.k) ? '' : ' · L = limitato') + ' · Canc = togli · frecce = sposta · Esc = chiudi</div>';
     pc.style.display = 'block';
     var r = td.getBoundingClientRect();
     pc.style.left = Math.max(8, Math.min(r.right + 6, window.innerWidth - pc.offsetWidth - 8)) + 'px';
@@ -860,6 +875,7 @@ function turnoInServizio(quando) {
       return;
     }
     if (k === 'x' || k === 'X') { impostaSpec(sel.id, sel.k, 'X'); e.preventDefault(); }
+    else if ((k === 'l' || k === 'L') && !isGoogle(sel.k)) { impostaSpec(sel.id, sel.k, 'L'); e.preventDefault(); }
     else if (k === 'Delete' || k === 'Backspace') { impostaSpec(sel.id, sel.k, null); e.preventDefault(); }
     else if (k === 'Escape') chiudiSelezione();
     else if (k === 'ArrowRight') { spostaSelezione(1, 0); e.preventDefault(); }
@@ -875,7 +891,7 @@ function turnoInServizio(quando) {
     $('stInfo').textContent = 'Foglio Google: ' + descriviStato(st) + '.';
     $('stCorso').checked = !!(p.spec[k] || st);
     $('stStato').value = st && st.m ? st.s : '';
-    $('stStato').options[0].text = p._nuova ? 'Non indicato (lo dirà il prossimo controllo del «Prospetto Disponibilità»)' : 'Come dal «Prospetto Disponibilità»';
+    $('stStato').options[0].text = p._nuova ? 'Non indicato (lo dirà il prossimo controllo del «Personale Operativo Specializzato»)' : 'Come dal «Personale Operativo Specializzato»';
     apri('vStato');
   }
   $('stOk').onclick = function () {
@@ -970,8 +986,8 @@ function turnoInServizio(quando) {
       var chiavi = colonne().filter(function (c) { return p.spec[c.key] || p.stato[c.key]; });
       $('iSceltaTesto').innerHTML = 'Scelto: <b>' + esc(p.qualifica + ' ' + p.nome) + '</b> (' + (p.attivo ? 'ora nel Turno ' + esc(p.turno) : 'non assegnato') + '). Arriva con tutte le sue specializzazioni:' +
         '<div class="riepilogo-spec" style="margin-top:6px">' + (chiavi.length ? chiavi.map(function (c) {
-          var st = p.stato[c.key], cls = isGoogle(c.key) ? (st ? st.s : 'nd') : '';
-          return '<span><b class="' + cls + '">' + esc(p.spec[c.key] || 'X') + '</b> ' + esc(etichetta(c.key)) + (isGoogle(c.key) ? ' — ' + (st ? (st.s === 'op' ? 'operativo' : 'NON operativo') : 'in attesa di controllo') : '') + '</span>';
+          var st = p.stato[c.key], lim = !isGoogle(c.key) && eLimitato(p.spec[c.key]), cls = isGoogle(c.key) ? (st ? st.s : 'nd') : (lim ? 'lim' : '');
+          return '<span><b class="' + cls + '">' + (lim ? 'L' : 'X') + '</b> ' + esc(etichetta(c.key)) + (lim ? ' (limitato)' : '') + (isGoogle(c.key) ? ' — ' + (st ? (st.s === 'op' ? 'operativo' : 'NON operativo') : 'in attesa di controllo') : '') + '</span>';
         }).join('') : '<i>nessuna specializzazione registrata</i>') + '</div>';
       $('iScelta').style.display = ''; $('iOk').disabled = false; cercaPersonale();
     }; });
@@ -1053,7 +1069,7 @@ function turnoInServizio(quando) {
     var h = '';
     (D.config.proposteAlias || []).forEach(function (x, i) {
       var p = D.persone.filter(function (y) { return y.id === x.id; })[0];
-      h += '<div style="margin:4px 0">Il «Prospetto Disponibilità» scrive <b>' + esc(x.testo) + '</b>: è <b>' + esc(p ? p.nome + ' (Turno ' + p.turno + ')' : x.id) + '</b>? <button data-pa="' + i + '" data-c="1">Sì</button> <button data-pa="' + i + '" data-c="0">No</button></div>';
+      h += '<div style="margin:4px 0">Il «Personale Operativo Specializzato» scrive <b>' + esc(x.testo) + '</b>: è <b>' + esc(p ? p.nome + ' (Turno ' + p.turno + ')' : x.id) + '</b>? <button data-pa="' + i + '" data-c="1">Sì</button> <button data-pa="' + i + '" data-c="0">No</button></div>';
     });
     (D.config.nonAbbinati || []).forEach(function (t, i) {
       h += '<div style="margin:4px 0"><b>' + esc(t) + '</b> → <select data-na="' + i + '">' + opz + '</select> <button data-nab="' + i + '">Abbina</button> <button data-nai="' + i + '" title="Non è personale dei turni">Ignora</button></div>';
