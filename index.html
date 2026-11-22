@@ -177,7 +177,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 17:11</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 17:55</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -681,8 +681,18 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
   function adattaLarghezza(vis, adminQui) {
     var cont = $('contenitore'), fissi = 46 + 210 + (adminQui ? 112 : 0) + 18;
     var n = vis.filter(function (c) { return c.gruppo !== 'Istruttori'; }).length || vis.length;
-    var w = Math.max(24, Math.min(46, Math.floor((cont.clientWidth - fissi) / n)));
+    var w = Math.max(24, (cont.clientWidth - fissi) / n);   // prima stima
     cont.style.setProperty('--w', w + 'px');
+    // Correzione sulla misura reale: le colonne fino a DOS riempiono esattamente lo schermo,
+    // gli Istruttori iniziano subito dopo il bordo destro (barra di scorrimento o pulsante "Istruttori ▶").
+    for (var giro = 0; giro < 3; giro++) {
+      var primaIst = cont.querySelector('th.vert.ist-inizio'); if (!primaIst) break;
+      var inizio = primaIst.getBoundingClientRect().left - cont.getBoundingClientRect().left + cont.scrollLeft;
+      var delta = cont.clientWidth - inizio;
+      if (Math.abs(delta) < 0.5) break;
+      w = Math.max(24, w + delta / n);
+      cont.style.setProperty('--w', w + 'px');
+    }
     adattaAltezza();
     aggiornaBottoneIstruttori();
   }
