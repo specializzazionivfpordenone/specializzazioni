@@ -171,12 +171,12 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6">v. 22/11 10:33</span>
+    <span class="sotto" style="opacity:.6">v. 22/11 10:47</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
   <button class="chiaro" id="bSuper" style="display:none" title="Pannello super-amministratore">⚙ Pannello</button>
-  <button class="chiaro" id="bAdmin">Amministratore</button>
+  <button class="chiaro" id="bAdmin" title="Sei in sola consultazione. Clic per entrare come amministratore (con il PIN).">Visualizzatore ▾</button>
 </header>
 <div class="barra-salva" id="barraSalva">
   <span>⚠ <span id="nModifiche"></span> — premi <b>Salva</b> per renderle definitive</span>
@@ -448,7 +448,9 @@ function turnoInServizio(quando) {
     var u = D.turni[F.turno] && D.turni[F.turno].ultimaModifica;
     $('ultimaMod').innerHTML = 'Ultima modifica Turno ' + F.turno + ': <b>' + esc(fmt(u)) + '</b>';
     $('schede').querySelectorAll('button').forEach(function (b) { b.onclick = function () { if (F.solo) lasciaRicerca(); F.turno = b.getAttribute('data-t'); render(); }; });
-    $('bAdmin').textContent = ruolo ? 'Esci (' + (ruolo === 'SUPER' ? 'super-amministratore' : 'amministratore Turno ' + ruolo) + ')' : 'Amministratore';
+    // Il pulsante dice in che modalità sei; cliccandolo la cambi.
+    $('bAdmin').textContent = (ruolo ? (ruolo === 'SUPER' ? 'Super-amministratore' : 'Amministratore Turno ' + ruolo) : 'Visualizzatore') + ' ▾';
+    $('bAdmin').title = ruolo ? 'Sei in modalità amministratore. Clic per uscire e tornare Visualizzatore.' : 'Sei in sola consultazione. Clic per entrare come amministratore (con il PIN).';
     $('bSuper').style.display = ruolo === 'SUPER' ? '' : 'none';
     var ab = $('adminBar');
     if (ruolo && (ruolo === 'SUPER' || ruolo === F.turno)) {
@@ -1023,16 +1025,17 @@ function turnoInServizio(quando) {
   };
   $('lPin').onkeydown = function (e) { if (e.key === 'Enter') $('lEntra').click(); };
   $('lEntra').onclick = function () {
-    var r0 = $('lRuolo').value; $('lEntra').disabled = true;
+    var r0 = $('lRuolo').value; $('lEntra').disabled = true; $('lEntra').textContent = 'Verifica…';
     chiama('apiLogin', [r0, $('lPin').value], function (r) {
-      $('lEntra').disabled = false;
+      $('lEntra').disabled = false; $('lEntra').textContent = 'Entra';
       if (!r.ok) {
         $('lErrore').textContent = r.bloccatoFino ? 'Troppi tentativi: accesso bloccato fino alle ' + new Date(r.bloccatoFino).toLocaleTimeString('it-IT', { timeZone: 'Europe/Rome', hour: '2-digit', minute: '2-digit' }) + '.' : 'PIN errato. Tentativi rimasti: ' + r.rimasti + '.';
         return;
       }
       token = r.token; ruolo = r.ruolo; memo.set('tok', token); memo.set('ruolo', ruolo);
-      if (ruolo !== 'SUPER') F.turno = ruolo;
-      chiudi('vLogin'); carica();
+      if (ruolo !== 'SUPER') { if (F.solo) lasciaRicerca(); F.turno = ruolo; }
+      chiudi('vLogin');
+      if (r.dati) { D = r.dati; render(); } else carica();
     });
   };
   function esci(silenzioso) {
