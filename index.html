@@ -90,6 +90,9 @@
   tr.nuova td { font-style:italic; color:var(--tenue); }
   .op { color:var(--ok); } .sosp { color:var(--ko); } .nd { color:#8a8f98; }
   .lim { color:#D35400; font-weight:900; }
+  td.cella.ist { position:relative; }
+  .ist-angolo { position:absolute; top:0; right:0; width:0; height:0; border-top:8px solid #C9A000; border-left:8px solid transparent; pointer-events:none; }
+  .ist-leg { display:inline-block; width:0; height:0; border-top:8px solid #C9A000; border-left:8px solid transparent; vertical-align:middle; }
   td.cella .op, td.cella .sosp, .legenda-breve .op, .legenda-breve .sosp { display:inline-block; min-width:17px; line-height:17px; padding:0 2px; border-radius:3px; color:#fff; font-weight:900; text-align:center; }
   td.cella .op, .legenda-breve .op { background:#12A537; box-shadow:inset 0 0 0 1px #0A7A27; }
   td.cella .sosp, .legenda-breve .sosp { background:#E3120B; box-shadow:inset 0 0 0 1px #A90C07; }
@@ -174,7 +177,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:36</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:42</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -196,7 +199,7 @@
   <button id="bAzzera">✕ Togli tutti i filtri</button>
   <button id="bIstruttori">Istruttori ▶</button>
   <span id="conteggio" style="font-size:13px;color:var(--tenue)"></span>
-  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · clic sulla X per i dettagli</span>
+  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · <span class="ist-leg"></span> istruttore · clic sulla X per i dettagli</span>
 </section>
 <div id="adminBar" class="admin-bar" style="display:none"></div>
 <div id="avvisoManuale" class="avviso" style="display:none"></div>
@@ -379,6 +382,20 @@ function turnoInServizio(quando) {
   return turnoDiurno(a, m, g - (h >= 20 ? 1 : 2));
 }
 
+// Istruttori: per ogni specializzazione, la colonna Istruttori corrispondente (unico archivio dell'informazione).
+// Professionale, Ginnico e TPSS non hanno una colonna di specializzazione: restano solo nelle colonne Istruttori.
+var ISTRUTTORE_DI = {
+  saf_basico: 'ist_saf_bas', saf_avanzato: 'ist_saf_av', sa: 'ist_sa', sfa: 'ist_fluv', atp: 'ist_atp',
+  salvamento: 'ist_nuoto', cinofili: 'ist_cino', dos: 'ist_dos',
+  pt1: 'ist_pat', pt1s: 'ist_pat', pt2: 'ist_pat', pt3: 'ist_pat', pt4: 'ist_pat', autoscala: 'ist_pat', autogru: 'ist_pat',
+  muletto: 'ist_pat', gtnp: 'ist_pat', gos: 'ist_pat', adr: 'ist_pat',
+  pn1: 'ist_naut', pn2: 'ist_naut', anfibio: 'ist_naut', pwc: 'ist_naut', socc_pwc: 'ist_naut',
+  usar_l: 'ist_usar', usar_m: 'ist_usar', tas1: 'ist_tas', tas2: 'ist_tas',
+  nbcr0: 'ist_nbcr', nbcr1: 'ist_nbcr', nbcr2: 'ist_nbcr', nbcr3: 'ist_nbcr', gpl_light: 'ist_nbcr', lpg: 'ist_nbcr', radiometria: 'ist_nbcr'
+};
+function chiaveIstruttore(key) { return ISTRUTTORE_DI.hasOwnProperty(key) ? ISTRUTTORE_DI[key] : null; }
+function eIstruttore(p, key) { var i = chiaveIstruttore(key); return !!(i && p.spec && p.spec[i]); }
+
 
 </script>
 <script>
@@ -470,7 +487,7 @@ function turnoInServizio(quando) {
     if (ruolo && (ruolo === 'SUPER' || ruolo === F.turno)) {
       ab.style.display = 'flex';
       ab.innerHTML = '<strong>Modalità amministratore — ' + (ruolo === 'SUPER' ? 'tutti i turni' : 'Turno ' + ruolo) + '</strong>' +
-        '<span>Clicca su una casella e scegli <b>Metti X</b> / <b>Metti L</b> (limitato) / <b>Togli</b>, oppure usa la tastiera: <b>frecce</b> per muoverti, <b>X</b> o <b>L</b> per mettere, <b>Canc</b> per togliere.</span><button id="bNuova">+ Inserisci personale</button>';
+        '<span>Clic su una casella e scrivi: <b>X</b>, <b>L</b> (limitato), <b>I</b> (istruttore), <b>Canc</b> per togliere, <b>frecce</b> per muoverti. Menu: <b>Invio</b> o doppio clic.</span><button id="bNuova">+ Inserisci personale</button>';
       $('bNuova').onclick = apriInserisci;
     } else if (ruolo) {
       ab.style.display = 'flex';
@@ -520,6 +537,8 @@ function turnoInServizio(quando) {
       else if (v) html = '<span' + (c.coloreX ? ' style="color:' + c.coloreX + '"' : '') + '>' + esc(v) + '</span>';
       if (modificabile) cls += ' mod';
     }
+    // Istruttore: triangolino dorato nell'angolo (il dato sta nella colonna Istruttori corrispondente).
+    if (html && eIstruttore(p, c.key)) { html += '<span class="ist-angolo"></span>'; cls += ' ist'; titolo += ' · Istruttore ' + etichetta(chiaveIstruttore(c.key)).replace(/^Istruttori /, ''); }
     if (p._cambiata && ((p._cambiata.spec || {}).hasOwnProperty(c.key) || (p._cambiata.stato || {}).hasOwnProperty(c.key))) cls += ' cambiata';
     if (dim) cls += ' tenue';
     if (c.key === 'ist_prof') cls += ' ist-inizio';
@@ -625,7 +644,10 @@ function turnoInServizio(quando) {
     $('contenitore').querySelectorAll('th.vert').forEach(function (th) { th.onclick = function (e) { apriMenuFiltro(th.getAttribute('data-k'), th); e.stopPropagation(); }; });
     $('contenitore').querySelectorAll('[data-filtro]').forEach(function (b) { b.onclick = function (e) { apriMenuFiltro(b.getAttribute('data-filtro'), b); e.stopPropagation(); }; b.ondblclick = function (e) { togliFiltro(b.getAttribute('data-filtro')); e.stopPropagation(); }; });
     $('contenitore').querySelectorAll('th.vert').forEach(function (th) { th.ondblclick = function (e) { togliFiltro(th.getAttribute('data-k')); e.stopPropagation(); }; });
-    $('contenitore').querySelectorAll('td.mod').forEach(function (td) { td.onclick = function (e) { e.stopPropagation(); clicCella(td.getAttribute('data-id'), td.getAttribute('data-k')); }; });
+    $('contenitore').querySelectorAll('td.mod').forEach(function (td) {
+      td.onclick = function (e) { e.stopPropagation(); clicCella(td.getAttribute('data-id'), td.getAttribute('data-k')); };
+      td.ondblclick = function (e) { e.stopPropagation(); sel = { id: td.getAttribute('data-id'), k: td.getAttribute('data-k') }; mostraSelezione(true); };
+    });
     $('contenitore').querySelectorAll('td.info').forEach(function (td) { td.onclick = function (e) {
       var p = vista().filter(function (x) { return x.id === td.getAttribute('data-id'); })[0], k = td.getAttribute('data-k');
       var c = D.config.controllo, st = p.stato[k], f = $('fumetto'), rc = td.getBoundingClientRect();
@@ -789,9 +811,12 @@ function turnoInServizio(quando) {
 
   // Un clic seleziona la casella (come Excel); la X si mette o toglie dal menu accanto o con la tastiera.
   var sel = null;
+  // Come in Excel: il clic seleziona la casella (poi si scrive con la tastiera);
+  // il menu si apre con un secondo clic sulla stessa casella, con un doppio clic o con Invio.
   function clicCella(id, k) {
     var p = vista().filter(function (x) { return x.id === id; })[0]; if (!p) return;
-    sel = { id: id, k: k }; mostraSelezione(true);
+    var stessa = sel && sel.id === id && sel.k === k;
+    sel = { id: id, k: k }; mostraSelezione(stessa);
   }
   function tdSelezionata() { return sel ? $('contenitore').querySelector('td.mod[data-id="' + sel.id + '"][data-k="' + sel.k + '"]') : null; }
   // conMenu: dopo un clic si mostra il menu; con la tastiera resta solo la casella evidenziata.
@@ -816,8 +841,9 @@ function turnoInServizio(quando) {
     var p = vista().filter(function (x) { return x.id === sel.id; })[0];
     pc.innerHTML = '<div class="tit">' + esc(p.nome) + ' — ' + esc(etichetta(sel.k)) + '</div>' +
       '<button data-v="X" class="primario">✔ Metti X</button> ' + (isGoogle(sel.k) ? '' : '<button data-v="L" title="Ha la specializzazione ma è limitato (es. patente con limitazioni)">Metti <b class="lim">L</b> limitato</button> ') + '<button data-v="">✖ Togli</button>' +
+      (chiaveIstruttore(sel.k) ? '<div style="margin-top:6px"><button data-ist="1" title="Segna o toglie la X nella colonna Istruttori ' + esc(etichetta(chiaveIstruttore(sel.k)).replace(/^Istruttori /, '')) + '">' + (eIstruttore(p, sel.k) ? '☆ Togli istruttore' : '★ Istruttore') + '</button></div>' : '') +
       (isGoogle(sel.k) ? ' <button data-stato="1" title="Operativo / non operativo impostato a mano">Stato…</button><div class="aiuto">Colonna ● : la X messa a mano resta <b>grigia</b> finché il «Personale Operativo Specializzato» non la conferma (verde o rossa).</div>' : '') +
-      '<div class="aiuto">Tastiera: X = metti' + (isGoogle(sel.k) ? '' : ' · L = limitato') + ' · Canc = togli · frecce = sposta · Esc = chiudi</div>';
+      '<div class="aiuto">Tastiera: X = metti' + (isGoogle(sel.k) ? '' : ' · L = limitato') + (chiaveIstruttore(sel.k) ? ' · I = istruttore' : '') + ' · Canc = togli · frecce = sposta · Esc = chiudi</div>';
     pc.style.display = 'block';
     var r = td.getBoundingClientRect();
     pc.style.left = Math.max(8, Math.min(r.right + 6, window.innerWidth - pc.offsetWidth - 8)) + 'px';
@@ -825,6 +851,7 @@ function turnoInServizio(quando) {
     pc.style.top = Math.max(8, y) + 'px';
     pc.querySelectorAll('button').forEach(function (b) { b.onclick = function (e) {
       e.stopPropagation();
+      if (b.getAttribute('data-ist')) { var ii = sel; chiudiSelezione(); sel = ii; impostaIstruttore(ii.id, ii.k); return; }
       if (b.getAttribute('data-stato')) { var q = vista().filter(function (x) { return x.id === sel.id; })[0], kk = sel.k; chiudiSelezione(); return apriStato(q, kk); }
       impostaSpec(sel.id, sel.k, b.getAttribute('data-v') || null); chiudiSelezione();
     }; });
@@ -853,6 +880,16 @@ function turnoInServizio(quando) {
     }
     render(); mostraSelezione(false);
   }
+  // Istruttore (prova): segna/toglie la X nella colonna Istruttori corrispondente; se la casella è vuota mette anche la X.
+  function impostaIstruttore(id, k) {
+    var ik = chiaveIstruttore(k); if (!ik) return;
+    var p = vista().filter(function (x) { return x.id === id; })[0]; if (!p) return;
+    var attivo = !eIstruttore(p, k);
+    if (attivo && !(p.spec[k] || p.stato[k])) impostaSpec(id, k, 'X');
+    impostaSpec(id, ik, attivo ? 'X' : null);
+    ultimaCella = { id: id, k: k };
+    toast(attivo ? 'Istruttore segnato: X anche in Istruttori ' + etichetta(ik).replace(/^Istruttori /, '') + '.' : 'Istruttore tolto (anche dalla colonna Istruttori).', 3500);
+  }
   function spostaSelezione(dx, dy) {
     var td = tdSelezionata(); if (!td) return;
     var tr = td.parentNode, celle = Array.prototype.slice.call(tr.querySelectorAll('td.cella')), i = celle.indexOf(td), nuovo = null;
@@ -876,6 +913,8 @@ function turnoInServizio(quando) {
     }
     if (k === 'x' || k === 'X') { impostaSpec(sel.id, sel.k, 'X'); e.preventDefault(); }
     else if ((k === 'l' || k === 'L') && !isGoogle(sel.k)) { impostaSpec(sel.id, sel.k, 'L'); e.preventDefault(); }
+    else if ((k === 'i' || k === 'I') && chiaveIstruttore(sel.k)) { impostaIstruttore(sel.id, sel.k); e.preventDefault(); }
+    else if (k === 'Enter') { mostraSelezione(true); e.preventDefault(); }
     else if (k === 'Delete' || k === 'Backspace') { impostaSpec(sel.id, sel.k, null); e.preventDefault(); }
     else if (k === 'Escape') chiudiSelezione();
     else if (k === 'ArrowRight') { spostaSelezione(1, 0); e.preventDefault(); }
