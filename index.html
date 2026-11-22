@@ -180,7 +180,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 21:18</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 21:22</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -495,19 +495,25 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     var gruppi = []; cols.forEach(function (c) { var g = gruppi[gruppi.length - 1]; if (g && g.gruppo === c.gruppo) g.n++; else gruppi.push({ gruppo: c.gruppo, colore: c.coloreGruppo, n: 1 }); });
     var inizio = {}; var prec = null; cols.forEach(function (c) { if (c.gruppo !== prec) inizio[c.key] = 1; prec = c.gruppo; });
     var h = '<thead><tr class="gr"><th colspan="2"></th>' + gruppi.map(function (g) { return '<th colspan="' + g.n + '" class="ig" style="color:' + g.colore + '">' + esc(g.gruppo || '') + '</th>'; }).join('') + '</tr>' +
-      '<tr><th class="q">Qual.</th><th class="nm">Cognome e Nome</th>' + cols.map(function (c) { return '<th class="v' + (inizio[c.key] ? ' ig' : '') + '" style="color:' + (c.coloreX || c.coloreGruppo) + '"><span>' + esc(c.etichetta) + (isGoogle(c.key) ? ' ●' : '') + '</span></th>'; }).join('') + '</tr></thead><tbody>';
-    var tot = 0;
+      '<tr><th class="q">Qual.</th><th class="nm">Cognome e Nome</th>' + cols.map(function (c) { return '<th class="v' + (inizio[c.key] ? ' ig' : '') + '" style="color:' + (c.coloreX || c.coloreGruppo) + '"><span>' + esc(c.etichetta) + (isGoogle(c.key) ? ' ●' : '') + '</span></th>'; }).join('') + '</tr></thead>';
+    var testata = h, colgroup = '<colgroup><col class="q"><col class="nm">' + cols.map(function () { return '<col>'; }).join('') + '</colgroup>';
+    // Centrale su un foglio, i distaccamenti insieme sul foglio dopo (ognuno con le intestazioni delle colonne).
+    var blocchi = [], tot = 0;
     sedi.forEach(function (s) {
       var lista = ordinaPersone(persone.filter(function (p) { return p.sede === s; }), D.qualifiche);
       if (!lista.length) return;
       tot += lista.length;
+      var nuovoBlocco = !blocchi.length || s === D.sedi[0] || blocchi[blocchi.length - 1].centrale;
+      if (nuovoBlocco) blocchi.push({ centrale: s === D.sedi[0], righe: '' });
+      h = '';
       h += '<tr class="sede"><td colspan="' + (cols.length + 2) + '">' + esc(s.toUpperCase()) + ' — ' + lista.length + (lista.length === 1 ? ' persona' : ' persone') + '</td></tr>';
       lista.forEach(function (p) {
         h += '<tr><td class="q">' + esc(p.qualifica || '') + '</td><td class="nm">' + esc(p.nome) + '</td>' +
           cols.map(function (c) { return cella(p, c, false).replace('class="cella', 'class="cella' + (inizio[c.key] ? ' ig' : '')); }).join('') + '</tr>';
       });
+      blocchi[blocchi.length - 1].righe += h;
     });
-    h += '</tbody>';
+    var tabelle = blocchi.map(function (b, i) { return '<table class="' + (i ? 'nuovo-foglio' : '') + '">' + colgroup + testata + '<tbody>' + b.righe + '</tbody></table>'; }).join('');
     var c = D.config.controllo, logo = (document.querySelector('header img.logo') || {}).src || '';
     var righe = ['<b>Turno ' + esc(opz.turno) + '</b> · Sedi: ' + esc(opz.sedi && opz.sedi.length ? opz.sedi.join(', ') : 'tutte') + ' · ' + tot + (tot === 1 ? ' persona' : ' persone'),
       'Prospetto turni di riferimento: ' + esc(D.config.prospetto || '') + ' · File Google «Personale Operativo Specializzato» controllato il ' + esc(c ? fmt(c.quando) : '—') + ' · Stampato il ' + esc(fmt(new Date().toISOString()))];
@@ -517,7 +523,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       '.testa{display:flex;align-items:center;gap:3mm;margin-bottom:2mm}.testa img{width:11mm;height:11mm}.testa h1{font-size:' + (a3 ? 15 : 13) + 'pt;margin:0;color:#B71C1C}.testa div{font-size:' + (a3 ? 8.5 : 7.5) + 'pt;line-height:1.35}' +
       'table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:' + (a3 ? 8 : 7) + 'pt}' +
       'th,td{border:0.2mm solid #9aa3ad;padding:0}col.q{width:' + (a3 ? 10 : 9) + 'mm}col.nm{width:' + (a3 ? 48 : 42) + 'mm}' +
-      'thead{display:table-header-group}tr{page-break-inside:avoid;break-inside:avoid}' +
+      'thead{display:table-header-group}tr{page-break-inside:avoid;break-inside:avoid}table.nuovo-foglio{page-break-before:always;break-before:page}' +
       'tr.gr th{font-size:' + (a3 ? 7.5 : 6.5) + 'pt;padding:0.5mm 0;white-space:nowrap;overflow:hidden}' +
       'th.v{height:' + (a3 ? 36 : 31) + 'mm;vertical-align:bottom;padding-bottom:1mm}th.v span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:' + (a3 ? 7.5 : 6.3) + 'pt;font-weight:bold}' +
       'th.q,th.nm{vertical-align:bottom;text-align:left;padding:1mm}td.q,td.nm{padding:0.4mm 1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
@@ -528,7 +534,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       '.legenda{margin-top:2mm;font-size:' + (a3 ? 8 : 7) + 'pt;color:#444}.legenda b.op,.legenda b.sosp{padding:0 0.6mm}.tri{display:inline-block;width:0;height:0;border-top:2mm solid #C9A000;border-left:2mm solid transparent}';
     return '<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Specializzazioni VF Pordenone — Turno ' + esc(opz.turno) + '</title><style>' + css + '</style></head><body>' +
       '<div class="testa">' + (logo ? '<img src="' + logo + '" alt="">' : '') + '<div><h1>Specializzazioni Personale VF Pordenone</h1>' + righe.join('<br>') + '</div></div>' +
-      '<table><colgroup><col class="q"><col class="nm">' + cols.map(function () { return '<col>'; }).join('') + '</colgroup>' + h + '</table>' +
+      tabelle +
       '<div class="legenda">● colonne aggiornate ogni mattina dal file Google «Personale Operativo Specializzato»: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> limitato · <span class="tri"></span> istruttore</div>' +
       '</body></html>';
   }
