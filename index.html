@@ -169,7 +169,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6">v. 21/11 21:35</span>
+    <span class="sotto" style="opacity:.6">v. 22/11 09:57</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -349,12 +349,30 @@ function cercaPersone(persone, testo, opz) {
   return trovate.slice(0, opz.max || 12).map(function (x) { return x.p; });
 }
 
+// Turnario nazionale VVF (stesso calcolo del Gestionale TAS rev1.89): regime 12-24 / 12-48,
+// diurno 08-20, notturno 20-08; successione dei diurni A -> B -> C -> D.
+// Riferimento confermato: 2 luglio 2026 diurno del Turno D.
+var TURNARIO_SEQUENZA = ['D', 'A', 'B', 'C'];
+var TURNARIO_EPOCA_UTC = Date.UTC(2026, 6, 2);
+function turnoDiurno(anno, mese0, giorno) {
+  var diff = Math.round((Date.UTC(anno, mese0, giorno) - TURNARIO_EPOCA_UTC) / 86400000);
+  return TURNARIO_SEQUENZA[((diff % 4) + 4) % 4];
+}
+// Turno in servizio nell'istante indicato (ora locale del PC).
+function turnoInServizio(quando) {
+  var a = quando.getFullYear(), m = quando.getMonth(), g = quando.getDate(), h = quando.getHours();
+  if (h >= 8 && h < 20) return turnoDiurno(a, m, g);
+  // notte: la copre chi ha fatto il diurno il giorno prima dell'inizio della notte
+  return turnoDiurno(a, m, g - (h >= 20 ? 1 : 2));
+}
+
 
 </script>
 <script>
 (function () {
   var D = null, token = null, ruolo = null;
-  var F = { turno: 'A', sede: '', testo: '', colonne: {}, qualifiche: [], nascondi: false };
+  // All'apertura si mostra il turno in servizio adesso (turnario nazionale); poi l'utente si muove liberamente tra le schede.
+  var F = { turno: (function () { try { return turnoInServizio(new Date()); } catch (e) { return 'A'; } })(), sede: '', testo: '', colonne: {}, qualifiche: [], nascondi: false };
   var pend = { mod: {}, nuove: [], rimosse: [] };
   var editId = null;
   var $ = function (id) { return document.getElementById(id); };
