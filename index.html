@@ -145,6 +145,9 @@
   .barra-salva.visibile { display:flex; }
   .barra-salva button { padding:3px 14px; font-weight:600; }
   .barra-salva button.salva { background:#2E7D32; color:#fff; border-color:#2E7D32; font-weight:700; }
+  .scelte-stampa { display:flex; flex-wrap:wrap; gap:6px 14px; align-items:center; }
+  .scelte-stampa label { display:inline-flex; gap:5px; align-items:center; font-weight:normal; cursor:pointer; }
+  .nota-stampa { color:var(--tenue); font-size:12px; }
   .velo { position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:flex-start; justify-content:center; z-index:30; overflow:auto; padding:40px 10px; }
   .velo.visibile { display:flex; }
   .finestra { background:#fff; border-radius:10px; padding:18px 20px; width:min(560px, 100%); box-shadow:0 10px 30px rgba(0,0,0,.25); }
@@ -177,10 +180,11 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 17:55</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 21:18</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
+  <button class="chiaro" id="bStampa" title="Stampa un turno: A4 orizzontale, A3 con gli Istruttori">🖨 Stampa</button>
   <button class="chiaro" id="bSuper" style="display:none" title="Pannello super-amministratore">⚙ Pannello</button>
   <button class="chiaro" id="bAdmin" title="Sei in sola consultazione. Clic per entrare come amministratore (con il PIN).">Visualizzatore ▾</button>
 </header>
@@ -216,6 +220,18 @@
   <div class="riga"><label>PIN</label><input id="lPin" type="password" autocomplete="off" autocapitalize="off"></div>
   <div class="errore" id="lErrore"></div>
   <div class="bottoni"><button data-chiudi="vLogin">Annulla</button><button class="primario" id="lEntra">Entra</button></div>
+</div></div>
+
+<div class="velo" id="vStampa"><div class="finestra">
+  <h2>🖨 Stampa</h2>
+  <div class="riga"><label>Turno</label><span id="sTurni" class="scelte-stampa"></span></div>
+  <div class="riga"><label>Sedi</label><span class="scelte-stampa">
+    <label><input type="checkbox" id="sTutteSedi" checked> <b>Tutte</b></label> <span id="sSedi"></span></span></div>
+  <div class="riga"><label>Istruttori</label><span class="scelte-stampa"><label><input type="checkbox" id="sIstruttori"> Includi le colonne Istruttori <span class="nota-stampa">(foglio A3)</span></label></span></div>
+  <div class="riga" id="sRigaFiltro"><label>Filtri</label><span class="scelte-stampa"><label><input type="checkbox" id="sFiltrate"> Solo le persone filtrate ora</label> <span class="nota-stampa" id="sFiltroDescr"></span></span></div>
+  <div class="aiuto" id="sFormato"></div>
+  <div class="errore" id="sErrore"></div>
+  <div class="bottoni"><button data-chiudi="vStampa">Annulla</button><button class="primario" id="sVai">🖨 Stampa</button></div>
 </div></div>
 
 <div class="velo" id="vPersona"><div class="finestra">
@@ -443,6 +459,100 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     chiamaServer(nome, args, ok, function (e) { toast('Errore: ' + (e && e.message || e), 8000); });
   }
   function apri(id) { $(id).classList.add('visibile'); }
+
+  // ---- Stampa: un turno, sedi a scelta, Istruttori facoltativi (A4 orizzontale; A3 con gli Istruttori) ----
+  function filtriAttivi() { return !!(Object.keys(F.colonne).length || F.qualifiche.length || String(F.testo || '').trim() || F.solo); }
+  function descriviFiltri() {
+    if (F.solo) return 'ricerca: ' + ((vista().filter(function (x) { return x.id === F.solo; })[0] || {}).nome || '');
+    var f = Object.keys(F.colonne).map(function (k) { return FRASE_MODO[F.colonne[k]] + ' in ' + etichetta(k); });
+    if (F.qualifiche.length) f.push('qualifica ' + F.qualifiche.join(', '));
+    if (String(F.testo || '').trim()) f.push('nome contiene «' + F.testo.trim() + '»');
+    return f.join(' · ');
+  }
+  function aggiornaFormatoStampa() {
+    var a3 = $('sIstruttori').checked;
+    $('sFormato').textContent = 'Foglio ' + (a3 ? 'A3' : 'A4') + ' orizzontale. Se la stampante non ha l\'A' + (a3 ? '3' : '4') + ', scegli «Salva come PDF».';
+  }
+  function apriStampa() {
+    $('sTurni').innerHTML = D.turniElenco.map(function (t) { return '<label><input type="radio" name="sTurno" value="' + t + '"' + (t === F.turno ? ' checked' : '') + '> Turno ' + t + '</label>'; }).join('');
+    $('sSedi').innerHTML = D.sedi.map(function (s) { return '<label><input type="checkbox" data-sede="' + esc(s) + '"> ' + esc(s) + '</label>'; }).join(' ');
+    $('sTutteSedi').checked = true;
+    $('sSedi').querySelectorAll('input').forEach(function (i) { i.onchange = function () { $('sTutteSedi').checked = !$('sSedi').querySelector('input:checked'); }; });
+    $('sTutteSedi').onchange = function () { if (this.checked) $('sSedi').querySelectorAll('input').forEach(function (i) { i.checked = false; }); else if (!$('sSedi').querySelector('input:checked')) this.checked = true; };
+    var fa = filtriAttivi();
+    $('sRigaFiltro').style.display = fa ? '' : 'none'; $('sFiltrate').checked = false; $('sFiltroDescr').textContent = fa ? '(' + descriviFiltri() + ')' : '';
+    $('sIstruttori').onchange = aggiornaFormatoStampa; aggiornaFormatoStampa();
+    $('sErrore').textContent = '';
+    apri('vStampa');
+  }
+  function documentoStampa(opz) {
+    var a3 = !!opz.istruttori;
+    var cols = colonne().filter(function (c) { return a3 || c.gruppo !== 'Istruttori'; });
+    var persone = vista().filter(function (p) { return p.turno === opz.turno && p.attivo && !p._nuova; });
+    if (opz.filtrate) persone = filtra(persone, { turno: opz.turno, sede: null, testo: F.testo, colonne: F.colonne, qualifiche: F.qualifiche, solo: F.solo }, D.chiaviGoogle);
+    var sedi = opz.sedi && opz.sedi.length ? opz.sedi : D.sedi;
+    // intestazione: gruppi e nomi verticali
+    var gruppi = []; cols.forEach(function (c) { var g = gruppi[gruppi.length - 1]; if (g && g.gruppo === c.gruppo) g.n++; else gruppi.push({ gruppo: c.gruppo, colore: c.coloreGruppo, n: 1 }); });
+    var inizio = {}; var prec = null; cols.forEach(function (c) { if (c.gruppo !== prec) inizio[c.key] = 1; prec = c.gruppo; });
+    var h = '<thead><tr class="gr"><th colspan="2"></th>' + gruppi.map(function (g) { return '<th colspan="' + g.n + '" class="ig" style="color:' + g.colore + '">' + esc(g.gruppo || '') + '</th>'; }).join('') + '</tr>' +
+      '<tr><th class="q">Qual.</th><th class="nm">Cognome e Nome</th>' + cols.map(function (c) { return '<th class="v' + (inizio[c.key] ? ' ig' : '') + '" style="color:' + (c.coloreX || c.coloreGruppo) + '"><span>' + esc(c.etichetta) + (isGoogle(c.key) ? ' ●' : '') + '</span></th>'; }).join('') + '</tr></thead><tbody>';
+    var tot = 0;
+    sedi.forEach(function (s) {
+      var lista = ordinaPersone(persone.filter(function (p) { return p.sede === s; }), D.qualifiche);
+      if (!lista.length) return;
+      tot += lista.length;
+      h += '<tr class="sede"><td colspan="' + (cols.length + 2) + '">' + esc(s.toUpperCase()) + ' — ' + lista.length + (lista.length === 1 ? ' persona' : ' persone') + '</td></tr>';
+      lista.forEach(function (p) {
+        h += '<tr><td class="q">' + esc(p.qualifica || '') + '</td><td class="nm">' + esc(p.nome) + '</td>' +
+          cols.map(function (c) { return cella(p, c, false).replace('class="cella', 'class="cella' + (inizio[c.key] ? ' ig' : '')); }).join('') + '</tr>';
+      });
+    });
+    h += '</tbody>';
+    var c = D.config.controllo, logo = (document.querySelector('header img.logo') || {}).src || '';
+    var righe = ['<b>Turno ' + esc(opz.turno) + '</b> · Sedi: ' + esc(opz.sedi && opz.sedi.length ? opz.sedi.join(', ') : 'tutte') + ' · ' + tot + (tot === 1 ? ' persona' : ' persone'),
+      'Prospetto turni di riferimento: ' + esc(D.config.prospetto || '') + ' · File Google «Personale Operativo Specializzato» controllato il ' + esc(c ? fmt(c.quando) : '—') + ' · Stampato il ' + esc(fmt(new Date().toISOString()))];
+    if (opz.filtrate) righe.push('Filtro: ' + esc(descriviFiltri()));
+    var css = '@page{size:' + (a3 ? 'A3' : 'A4') + ' landscape;margin:7mm}' +
+      'body{font-family:Arial,Helvetica,sans-serif;color:#1d2330;margin:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+      '.testa{display:flex;align-items:center;gap:3mm;margin-bottom:2mm}.testa img{width:11mm;height:11mm}.testa h1{font-size:' + (a3 ? 15 : 13) + 'pt;margin:0;color:#B71C1C}.testa div{font-size:' + (a3 ? 8.5 : 7.5) + 'pt;line-height:1.35}' +
+      'table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:' + (a3 ? 8 : 7) + 'pt}' +
+      'th,td{border:0.2mm solid #9aa3ad;padding:0}col.q{width:' + (a3 ? 10 : 9) + 'mm}col.nm{width:' + (a3 ? 48 : 42) + 'mm}' +
+      'thead{display:table-header-group}tr{page-break-inside:avoid;break-inside:avoid}' +
+      'tr.gr th{font-size:' + (a3 ? 7.5 : 6.5) + 'pt;padding:0.5mm 0;white-space:nowrap;overflow:hidden}' +
+      'th.v{height:' + (a3 ? 36 : 31) + 'mm;vertical-align:bottom;padding-bottom:1mm}th.v span{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;font-size:' + (a3 ? 7.5 : 6.3) + 'pt;font-weight:bold}' +
+      'th.q,th.nm{vertical-align:bottom;text-align:left;padding:1mm}td.q,td.nm{padding:0.4mm 1mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
+      'td.cella{text-align:center;font-weight:bold;height:' + (a3 ? 5 : 4.4) + 'mm;position:relative}' +
+      '.ig{border-left:0.6mm solid #5b6573}tr.sede td{background:#eceff3;font-weight:bold;padding:0.6mm 1mm}' +
+      '.op,.sosp{display:inline-block;min-width:3.2mm;line-height:3.2mm;border-radius:0.5mm;color:#fff}.op{background:#12A537}.sosp{background:#E3120B}.nd{color:#8a8f98}.lim{color:#D35400;font-weight:900}sup.m{font-size:5pt}' +
+      '.ist-angolo{position:absolute;top:0;right:0;width:0;height:0;border-top:2mm solid #C9A000;border-left:2mm solid transparent}' +
+      '.legenda{margin-top:2mm;font-size:' + (a3 ? 8 : 7) + 'pt;color:#444}.legenda b.op,.legenda b.sosp{padding:0 0.6mm}.tri{display:inline-block;width:0;height:0;border-top:2mm solid #C9A000;border-left:2mm solid transparent}';
+    return '<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>Specializzazioni VF Pordenone — Turno ' + esc(opz.turno) + '</title><style>' + css + '</style></head><body>' +
+      '<div class="testa">' + (logo ? '<img src="' + logo + '" alt="">' : '') + '<div><h1>Specializzazioni Personale VF Pordenone</h1>' + righe.join('<br>') + '</div></div>' +
+      '<table><colgroup><col class="q"><col class="nm">' + cols.map(function () { return '<col>'; }).join('') + '</colgroup>' + h + '</table>' +
+      '<div class="legenda">● colonne aggiornate ogni mattina dal file Google «Personale Operativo Specializzato»: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> limitato · <span class="tri"></span> istruttore</div>' +
+      '</body></html>';
+  }
+  window.documentoStampaVF = documentoStampa;   // usato anche dalle prove automatiche
+  function eseguiStampa(html) {
+    var f = document.createElement('iframe');
+    f.setAttribute('aria-hidden', 'true'); f.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+    document.body.appendChild(f);
+    var d = f.contentWindow.document; d.open(); d.write(html); d.close();
+    setTimeout(function () {
+      try { f.contentWindow.focus(); f.contentWindow.print(); }
+      catch (e) { var w = window.open('', '_blank'); if (w) { w.document.write(html); w.document.close(); setTimeout(function () { w.print(); }, 400); } }
+      setTimeout(function () { if (f.parentNode) f.parentNode.removeChild(f); }, 60000);
+    }, 350);
+  }
+  $('bStampa').onclick = function () { if (D) apriStampa(); };
+  $('sVai').onclick = function () {
+    var t = (document.querySelector('input[name="sTurno"]:checked') || {}).value;
+    if (!t) { $('sErrore').textContent = 'Scegli il turno.'; return; }
+    var sedi = $('sTutteSedi').checked ? [] : Array.prototype.map.call($('sSedi').querySelectorAll('input:checked'), function (i) { return i.getAttribute('data-sede'); });
+    var html = documentoStampa({ turno: t, sedi: sedi, istruttori: $('sIstruttori').checked, filtrate: $('sRigaFiltro').style.display !== 'none' && $('sFiltrate').checked });
+    chiudi('vStampa');
+    eseguiStampa(html);
+  };
   function chiudi(id) { $(id).classList.remove('visibile'); }
   document.querySelectorAll('[data-chiudi]').forEach(function (b) { b.onclick = function () { chiudi(b.getAttribute('data-chiudi')); render(); }; });
 
