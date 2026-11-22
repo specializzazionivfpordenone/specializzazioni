@@ -177,7 +177,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:42</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 16:53</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -382,19 +382,30 @@ function turnoInServizio(quando) {
   return turnoDiurno(a, m, g - (h >= 20 ? 1 : 2));
 }
 
-// Istruttori: per ogni specializzazione, la colonna Istruttori corrispondente (unico archivio dell'informazione).
-// Professionale, Ginnico e TPSS non hanno una colonna di specializzazione: restano solo nelle colonne Istruttori.
+// Istruttori: per ogni specializzazione, le colonne Istruttori che la coprono (unico archivio dell'informazione).
+// La prima è quella che si segna con la stella; le altre la coprono comunque (es. Istruttore Professionale → USAR Light).
+// Professionale, Ginnico e TPSS non hanno una colonna di specializzazione propria.
 var ISTRUTTORE_DI = {
-  saf_basico: 'ist_saf_bas', saf_avanzato: 'ist_saf_av', sa: 'ist_sa', sfa: 'ist_fluv', atp: 'ist_atp',
-  salvamento: 'ist_nuoto', cinofili: 'ist_cino', dos: 'ist_dos',
-  pt1: 'ist_pat', pt1s: 'ist_pat', pt2: 'ist_pat', pt3: 'ist_pat', pt4: 'ist_pat', autoscala: 'ist_pat', autogru: 'ist_pat',
-  muletto: 'ist_pat', gtnp: 'ist_pat', gos: 'ist_pat', adr: 'ist_pat',
-  pn1: 'ist_naut', pn2: 'ist_naut', anfibio: 'ist_naut', pwc: 'ist_naut', socc_pwc: 'ist_naut',
-  usar_l: 'ist_usar', usar_m: 'ist_usar', tas1: 'ist_tas', tas2: 'ist_tas',
-  nbcr0: 'ist_nbcr', nbcr1: 'ist_nbcr', nbcr2: 'ist_nbcr', nbcr3: 'ist_nbcr', gpl_light: 'ist_nbcr', lpg: 'ist_nbcr', radiometria: 'ist_nbcr'
+  saf_basico: ['ist_saf_bas'], saf_avanzato: ['ist_saf_av'], sa: ['ist_sa'], sfa: ['ist_fluv'], atp: ['ist_atp'],
+  salvamento: ['ist_nuoto'], cinofili: ['ist_cino'], dos: ['ist_dos'],
+  // Patenti Terrestri: da I Grado Soccorso a Trasporto ADR, GOS escluso (elenco indicato da Spongy il 22/11)
+  pt1s: ['ist_pat'], pt2: ['ist_pat'], pt3: ['ist_pat'], pt4: ['ist_pat'], autoscala: ['ist_pat'], autogru: ['ist_pat'],
+  muletto: ['ist_pat'], gtnp: ['ist_pat'], adr: ['ist_pat'],
+  // GOS: ha il suo istruttore, che vale solo per GOS
+  gos: ['ist_gos'],
+  // Patenti Nautiche: I e II Grado
+  pn1: ['ist_naut'], pn2: ['ist_naut'],
+  // USAR: Istruttore Professionale vale anche per USAR Light; Istruttore USAR (Medium) vale per Light e Medium
+  usar_l: ['ist_prof', 'ist_usar'], usar_m: ['ist_usar'],
+  // Puntellamenti: Istruttore Professionale
+  puntellamenti: ['ist_prof'],
+  tas1: ['ist_tas'], tas2: ['ist_tas'],
+  nbcr0: ['ist_nbcr'], nbcr1: ['ist_nbcr'], nbcr2: ['ist_nbcr'], nbcr3: ['ist_nbcr'], gpl_light: ['ist_nbcr'], lpg: ['ist_nbcr'],
+  radiometria: ['ist_nbcr'], nucleo_nr: ['ist_nbcr']
 };
-function chiaveIstruttore(key) { return ISTRUTTORE_DI.hasOwnProperty(key) ? ISTRUTTORE_DI[key] : null; }
-function eIstruttore(p, key) { var i = chiaveIstruttore(key); return !!(i && p.spec && p.spec[i]); }
+function istruttoriDi(key) { return ISTRUTTORE_DI.hasOwnProperty(key) ? ISTRUTTORE_DI[key].slice() : []; }
+function chiaveIstruttore(key) { return istruttoriDi(key)[0] || null; }
+function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { return !!(p.spec && p.spec[i]); }); }
 
 
 </script>
@@ -538,7 +549,7 @@ function eIstruttore(p, key) { var i = chiaveIstruttore(key); return !!(i && p.s
       if (modificabile) cls += ' mod';
     }
     // Istruttore: triangolino dorato nell'angolo (il dato sta nella colonna Istruttori corrispondente).
-    if (html && eIstruttore(p, c.key)) { html += '<span class="ist-angolo"></span>'; cls += ' ist'; titolo += ' · Istruttore ' + etichetta(chiaveIstruttore(c.key)).replace(/^Istruttori /, ''); }
+    if (html && eIstruttore(p, c.key)) { html += '<span class="ist-angolo"></span>'; cls += ' ist'; titolo += ' · ' + nomiIstruttore(p, c.key); }
     if (p._cambiata && ((p._cambiata.spec || {}).hasOwnProperty(c.key) || (p._cambiata.stato || {}).hasOwnProperty(c.key))) cls += ' cambiata';
     if (dim) cls += ' tenue';
     if (c.key === 'ist_prof') cls += ' ist-inizio';
@@ -841,7 +852,7 @@ function eIstruttore(p, key) { var i = chiaveIstruttore(key); return !!(i && p.s
     var p = vista().filter(function (x) { return x.id === sel.id; })[0];
     pc.innerHTML = '<div class="tit">' + esc(p.nome) + ' — ' + esc(etichetta(sel.k)) + '</div>' +
       '<button data-v="X" class="primario">✔ Metti X</button> ' + (isGoogle(sel.k) ? '' : '<button data-v="L" title="Ha la specializzazione ma è limitato (es. patente con limitazioni)">Metti <b class="lim">L</b> limitato</button> ') + '<button data-v="">✖ Togli</button>' +
-      (chiaveIstruttore(sel.k) ? '<div style="margin-top:6px"><button data-ist="1" title="Segna o toglie la X nella colonna Istruttori ' + esc(etichetta(chiaveIstruttore(sel.k)).replace(/^Istruttori /, '')) + '">' + (eIstruttore(p, sel.k) ? '☆ Togli istruttore' : '★ Istruttore') + '</button></div>' : '') +
+      (chiaveIstruttore(sel.k) ? '<div style="margin-top:6px"><button data-ist="1" title="Segna o toglie la X nella colonna ' + esc(nomeIst(chiaveIstruttore(sel.k))) + '">' + (p.spec[chiaveIstruttore(sel.k)] ? '☆ Togli ' + esc(nomeIst(chiaveIstruttore(sel.k))) : '★ ' + esc(nomeIst(chiaveIstruttore(sel.k)))) + '</button>' + (eIstruttore(p, sel.k) && !p.spec[chiaveIstruttore(sel.k)] ? ' <span class="aiuto" style="display:inline">già istruttore come ' + esc(nomiIstruttore(p, sel.k)) + '</span>' : '') + '</div>' : '') +
       (isGoogle(sel.k) ? ' <button data-stato="1" title="Operativo / non operativo impostato a mano">Stato…</button><div class="aiuto">Colonna ● : la X messa a mano resta <b>grigia</b> finché il «Personale Operativo Specializzato» non la conferma (verde o rossa).</div>' : '') +
       '<div class="aiuto">Tastiera: X = metti' + (isGoogle(sel.k) ? '' : ' · L = limitato') + (chiaveIstruttore(sel.k) ? ' · I = istruttore' : '') + ' · Canc = togli · frecce = sposta · Esc = chiudi</div>';
     pc.style.display = 'block';
@@ -881,14 +892,20 @@ function eIstruttore(p, key) { var i = chiaveIstruttore(key); return !!(i && p.s
     render(); mostraSelezione(false);
   }
   // Istruttore (prova): segna/toglie la X nella colonna Istruttori corrispondente; se la casella è vuota mette anche la X.
+  function nomeIst(ik) { return 'Istruttore ' + etichetta(ik).replace(/^Istruttori /, ''); }
+  // Es. "Istruttore Professionale, Istruttore USAR": le colonne Istruttori che coprono questa casella e sono segnate.
+  function nomiIstruttore(p, k) { return istruttoriDi(k).filter(function (i) { return p.spec[i]; }).map(nomeIst).join(', '); }
   function impostaIstruttore(id, k) {
     var ik = chiaveIstruttore(k); if (!ik) return;
     var p = vista().filter(function (x) { return x.id === id; })[0]; if (!p) return;
-    var attivo = !eIstruttore(p, k);
+    var attivo = !p.spec[ik];
     if (attivo && !(p.spec[k] || p.stato[k])) impostaSpec(id, k, 'X');
     impostaSpec(id, ik, attivo ? 'X' : null);
     ultimaCella = { id: id, k: k };
-    toast(attivo ? 'Istruttore segnato: X anche in Istruttori ' + etichetta(ik).replace(/^Istruttori /, '') + '.' : 'Istruttore tolto (anche dalla colonna Istruttori).', 3500);
+    var dopo = vista().filter(function (x) { return x.id === id; })[0];
+    if (attivo) toast('Istruttore segnato: X anche nella colonna ' + nomeIst(ik) + '.', 3500);
+    else if (eIstruttore(dopo, k)) toast('Tolto ' + nomeIst(ik) + '. Il triangolino resta perché è anche ' + nomiIstruttore(dopo, k) + '.', 5000);
+    else toast('Istruttore tolto (anche dalla colonna ' + nomeIst(ik) + ').', 3500);
   }
   function spostaSelezione(dx, dy) {
     var td = tdSelezionata(); if (!td) return;
