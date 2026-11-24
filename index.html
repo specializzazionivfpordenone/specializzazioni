@@ -180,7 +180,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 24/11 20:42</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 24/11 20:52</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -1215,7 +1215,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       $('bSalva').disabled = false; $('bSalva').textContent = 'Salva';
       if (!r.ok) { if (r.errore === 'sessione') { esci(true); toast('Sessione scaduta: rientra con il PIN. Le modifiche non sono state salvate.', 8000); } return; }
       var nomi = function (ids) { return ids.map(function (id) { var p = D.persone.filter(function (x) { return x.id === id; })[0]; return p ? p.nome : id; }).join(', '); };
-      D = r.dati; pend = { mod: {}, nuove: [], rimosse: [] };
+      D = r.dati; firmaDati = JSON.stringify(r.dati); pend = { mod: {}, nuove: [], rimosse: [] };
       var msg = 'Modifiche salvate.';
       if (r.conflitti.length) msg = 'Attenzione: i dati di ' + nomi(r.conflitti) + ' erano stati cambiati da un altro amministratore. Le tue modifiche su di loro NON sono state salvate: ricontrolla e ripeti.';
       if (r.rifiutate.length) msg += ' Non salvate: ' + r.rifiutate.map(function (x) { return (x.id || 'nuova persona') + ' (' + x.motivo + ')'; }).join(', ') + '.';
@@ -1256,7 +1256,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       token = r.token; ruolo = r.ruolo; memo.set('tok', token); memo.set('ruolo', ruolo);
       if (ruolo !== 'SUPER') { if (F.solo) lasciaRicerca(); if (F.turno !== ruolo) azzeraFiltri(); F.turno = ruolo; }
       chiudi('vLogin');
-      if (r.dati) { D = r.dati; render(); } else carica();
+      if (r.dati) { D = r.dati; firmaDati = JSON.stringify(r.dati); render(); } else carica();
     });
   };
   function esci(silenzioso) {
@@ -1307,7 +1307,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
         if (r.errore === 'sessione') { chiudi('vSuper'); esci(true); toast('Accesso scaduto: rientra con il PIN.', 6000); $('bAdmin').click(); return; }
         $('suErrore').textContent = r.errore; return;
       }
-      if (r.dati) { D = r.dati; renderSuper(); render(); }
+      if (r.dati) { D = r.dati; firmaDati = JSON.stringify(r.dati); renderSuper(); render(); }
       if (dopo) dopo(r);
     }, function (e) {
       if (bottone) { bottone.disabled = false; bottone.textContent = testo; }
@@ -1369,15 +1369,42 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       localStorage.setItem(CHIAVE_LOCALE, JSON.stringify(c));
     } catch (e) {}
   }
+  var firmaDati = '';   // per capire se i dati arrivati sono diversi da quelli a video
   function carica() {
     if (!token) { var vecchi = leggiLocale(); if (vecchi && vecchi.catalogo && vecchi.persone) { D = vecchi; render(); } }
     chiama('apiDati', [token], function (d) {
+      firmaDati = JSON.stringify(d);
       D = d; salvaLocale(d);
       if (token && !d.ruolo) { token = null; ruolo = null; memo.set('tok', null); memo.set('ruolo', null); }
       else ruolo = d.ruolo;
       render();
     });
   }
+  // Aggiornamento automatico: ogni 2 minuti e quando si torna sulla scheda, così le pagine già aperte
+  // vedono i salvataggi degli altri. Non scatta con modifiche non salvate o con una finestra/menu aperto;
+  // se non è cambiato nulla non ridisegna, e la posizione di scorrimento resta dov'era.
+  var aggiornaInCorso = false, ultimoAggiorna = Date.now();
+  function occupato() {
+    return nPend() > 0 || sel || document.querySelector('.visibile') ||
+      $('menuFiltro').style.display === 'block' || $('fumetto').style.display === 'block' || document.activeElement === $('cercaGen');
+  }
+  function aggiornaSilenzioso() {
+    if (aggiornaInCorso || document.hidden || !D || occupato()) return;
+    aggiornaInCorso = true; ultimoAggiorna = Date.now();
+    chiamaServer('apiDati', [token], function (d) {
+      aggiornaInCorso = false;
+      var firma = JSON.stringify(d);
+      if (firma === firmaDati || occupato()) return;
+      if (token && !d.ruolo) return;   // sessione scaduta: ci pensa il controllo di inattività
+      firmaDati = firma; D = d; if (!token) salvaLocale(d);
+      var c = $('contenitore'), top = c.scrollTop, left = c.scrollLeft;
+      render(); c.scrollTop = top; c.scrollLeft = left;
+    }, function () { aggiornaInCorso = false; });
+  }
+  window.aggiornaDatiVF = aggiornaSilenzioso;
+  setInterval(aggiornaSilenzioso, window.INTERVALLO_AGGIORNA_MS || 120000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && Date.now() - ultimoAggiorna > 20000) aggiornaSilenzioso(); });
+
   token = memo.get('tok'); ruolo = memo.get('ruolo');
   carica();
 })();
