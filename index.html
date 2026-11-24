@@ -180,7 +180,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 22/11 21:22</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 24/11 19:12</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -605,7 +605,12 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     $('schede').innerHTML = D.turniElenco.map(function (t) { return '<button data-t="' + t + '" class="' + (t === F.turno ? 'attiva' : '') + '">Turno ' + t + '</button>'; }).join('');
     var u = D.turni[F.turno] && D.turni[F.turno].ultimaModifica;
     $('ultimaMod').innerHTML = 'Ultima modifica Turno ' + F.turno + ': <b>' + esc(fmt(u)) + '</b>';
-    $('schede').querySelectorAll('button').forEach(function (b) { b.onclick = function () { if (F.solo) lasciaRicerca(); F.turno = b.getAttribute('data-t'); render(); }; });
+    $('schede').querySelectorAll('button').forEach(function (b) { b.onclick = function () {
+      if (F.solo) lasciaRicerca();
+      var t = b.getAttribute('data-t');
+      if (t !== F.turno) azzeraFiltri();   // ogni turno si apre pulito: i filtri del turno lasciato non lo seguono
+      F.turno = t; render();
+    }; });
     // Il pulsante dice in che modalità sei; cliccandolo la cambi.
     $('bAdmin').textContent = (ruolo ? (ruolo === 'SUPER' ? 'Super-amministratore' : 'Amministratore Turno ' + ruolo) : 'Visualizzatore') + ' ▾';
     $('bAdmin').title = ruolo ? 'Sei in modalità amministratore. Clic per uscire e tornare Visualizzatore.' : 'Sei in sola consultazione. Clic per entrare come amministratore (con il PIN).';
@@ -1213,7 +1218,8 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
   $('fSede').onchange = function () { if (F.solo) lasciaRicerca(); F.sede = this.value; render(); };
   $('fTesto').oninput = function () { if (F.solo) { lasciaRicerca(); F.testo = this.value; return render(); } F.testo = this.value; renderTabella(); };
   $('fNascondi').onchange = function () { F.nascondi = this.checked; render(); };
-  $('bAzzera').onclick = function () { if (F.solo) lasciaRicerca(); F.sede = ''; F.testo = ''; $('fTesto').value = ''; F.colonne = {}; F.qualifiche = []; F.nascondi = false; render(); };
+  function azzeraFiltri() { F.sede = ''; F.testo = ''; $('fTesto').value = ''; $('fSede').value = ''; F.colonne = {}; F.qualifiche = []; F.nascondi = false; $('fNascondi').checked = false; }
+  $('bAzzera').onclick = function () { if (F.solo) lasciaRicerca(); azzeraFiltri(); render(); };
   $('bApriFiltri').onclick = function () { $('filtri').classList.toggle('aperti'); };
 
   // Accesso
@@ -1231,7 +1237,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
         return;
       }
       token = r.token; ruolo = r.ruolo; memo.set('tok', token); memo.set('ruolo', ruolo);
-      if (ruolo !== 'SUPER') { if (F.solo) lasciaRicerca(); F.turno = ruolo; }
+      if (ruolo !== 'SUPER') { if (F.solo) lasciaRicerca(); if (F.turno !== ruolo) azzeraFiltri(); F.turno = ruolo; }
       chiudi('vLogin');
       if (r.dati) { D = r.dati; render(); } else carica();
     });
