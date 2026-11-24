@@ -180,7 +180,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 24/11 19:12</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 24/11 20:42</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -203,7 +203,7 @@
   <button id="bAzzera">✕ Togli tutti i filtri</button>
   <button id="bIstruttori">Istruttori ▶</button>
   <span id="conteggio" style="font-size:13px;color:var(--tenue)"></span>
-  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · <span class="ist-leg"></span> istruttore · clic sulla X per i dettagli</span>
+  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · <span class="ist-leg"></span> istruttore · clic su una casella per i dettagli</span>
 </section>
 <div id="adminBar" class="admin-bar" style="display:none"></div>
 <div id="avvisoManuale" class="avviso" style="display:none"></div>
@@ -660,7 +660,6 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       if (v0) {
         html = '<span class="' + (st ? (st.s === 'op' ? 'op' : 'sosp') : 'nd') + '">' + esc(v0) + '</span>' + (st && st.m ? '<sup class="m">M</sup>' : '');
         titolo += ': ' + descriviStato(st);
-        if (!modificabile) cls += ' info';
       }
       if (modificabile) cls += ' mod';
     } else {
@@ -673,6 +672,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     if (html && eIstruttore(p, c.key)) { html += '<span class="ist-angolo"></span>'; cls += ' ist'; titolo += ' · ' + nomiIstruttore(p, c.key); }
     if (p._cambiata && ((p._cambiata.spec || {}).hasOwnProperty(c.key) || (p._cambiata.stato || {}).hasOwnProperty(c.key))) cls += ' cambiata';
     if (dim) cls += ' tenue';
+    if (!modificabile) cls += ' info';   // chi consulta: un clic mostra il fumetto con la spiegazione
     if (c.key === 'ist_prof') cls += ' ist-inizio';
     if (INIZI[c.key]) cls += ' inizio-gruppo';
     return '<td class="' + cls + '" data-id="' + esc(p.id) + '" data-k="' + c.key + '" title="' + titolo + '">' + html + '</td>';
@@ -732,6 +732,27 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     if (!st) return 'inserito a mano dall\'amministratore, in attesa del prossimo controllo del «Personale Operativo Specializzato»';
     return (st.s === 'op' ? 'OPERATIVO' : 'corso fatto ma NON operativo (sospeso / non mantenuto)') + (st.m ? ' — impostato a mano dall\'amministratore' : '');
   }
+  // Fumetto al clic per chi consulta: spiega in parole semplici cosa vuol dire la casella.
+  function testoFumetto(p, k) {
+    var testa = '<b>' + esc(p.qualifica + ' ' + p.nome) + '</b>' + esc(etichetta(k)) + ': ', classe = '', corpo;
+    if (isGoogle(k)) {
+      var st = p.stato[k], c = D.config.controllo;
+      if (p.spec[k] || st) {
+        classe = st ? st.s : '';
+        corpo = '<b class="' + (st ? st.s : 'nd') + '" style="display:inline">' + esc(st ? (st.s === 'op' ? 'operativo' : 'NON operativo') : 'in attesa di controllo') + '</b><br>' +
+          esc(st ? (st.s === 'op' ? 'Ha il corso ed è in regola con i mantenimenti.' : 'Ha fatto il corso ma al momento non è operativo (sospeso o mantenimento non fatto).') : 'Segnato a mano dall\'amministratore: il prossimo controllo del «Personale Operativo Specializzato» lo confermerà (verde o rosso) o lo toglierà.') +
+          (st && st.m ? '<br><i>Stato impostato a mano dall\'amministratore.</i>' : '');
+      } else corpo = '<b style="display:inline">non presente</b><br>Non compare nel «Personale Operativo Specializzato».';
+      corpo += '<br><span style="color:var(--tenue);font-size:12px">' + (c ? 'Dato dal file «Personale Operativo Specializzato», controllo del ' + esc(fmt(c.quando)) : 'Controllo mai eseguito') + '</span>';
+    } else {
+      var v = p.spec[k];
+      if (eLimitato(v)) corpo = '<b class="lim" style="display:inline">limitato</b><br>Ha la specializzazione, ma con limitazioni (es. patente con limitazioni).';
+      else if (v) corpo = '<b style="display:inline">sì</b><br>Ha la specializzazione.';
+      else corpo = '<b style="display:inline">no</b><br>Non risulta avere questa specializzazione.';
+    }
+    if ((p.spec[k] || p.stato[k]) && eIstruttore(p, k)) corpo += '<br><span style="color:#a07800">▲ È anche ' + esc(nomiIstruttore(p, k)) + '.</span>';
+    return { classe: classe, html: testa + corpo };
+  }
   function renderTabella() {
     var cols = colonne(), adminQui = ruolo && (ruolo === 'SUPER' || ruolo === F.turno);
     var vis = F.nascondi && Object.keys(colAtt()).length ? cols.filter(function (c) { return colAtt()[c.key]; }) : cols;
@@ -782,13 +803,8 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     });
     $('contenitore').querySelectorAll('td.info').forEach(function (td) { td.onclick = function (e) {
       var p = vista().filter(function (x) { return x.id === td.getAttribute('data-id'); })[0], k = td.getAttribute('data-k');
-      var c = D.config.controllo, st = p.stato[k], f = $('fumetto'), rc = td.getBoundingClientRect();
-      f.className = 'fumetto ' + (st ? st.s : '');
-      f.innerHTML = '<b>' + esc(p.qualifica + ' ' + p.nome) + '</b>' + esc(etichetta(k)) + ': <b class="' + (st ? st.s : 'nd') + '" style="display:inline">' +
-        esc(st ? (st.s === 'op' ? 'operativo' : 'NON operativo') : 'in attesa di controllo') + '</b><br>' +
-        esc(st ? (st.s === 'op' ? 'Ha il corso ed è in regola con i mantenimenti.' : 'Ha fatto il corso ma al momento non è operativo (sospeso o mantenimento non fatto).') : 'Segnato a mano dall\'amministratore: il prossimo controllo del «Personale Operativo Specializzato» lo confermerà (verde o rosso) o lo toglierà.') +
-        (st && st.m ? '<br><i>Stato impostato a mano dall\'amministratore.</i>' : '') +
-        '<br><span style="color:var(--tenue);font-size:12px">' + (c ? 'Dato dal file «Personale Operativo Specializzato», controllo del ' + esc(fmt(c.quando)) : 'Controllo mai eseguito') + '</span>';
+      var f = $('fumetto'), rc = td.getBoundingClientRect(), t = testoFumetto(p, k);
+      f.className = 'fumetto ' + t.classe; f.innerHTML = t.html;
       f.style.display = 'block';
       var x = Math.min(rc.left, window.innerWidth - f.offsetWidth - 8), y = rc.bottom + 6;
       if (y + f.offsetHeight > window.innerHeight) y = rc.top - f.offsetHeight - 6;
@@ -1048,6 +1064,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     }
     if (nuovo) { sel = { id: nuovo.getAttribute('data-id'), k: nuovo.getAttribute('data-k') }; mostraSelezione(false); assicuraVisibile(nuovo); }
   }
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('fumetto').style.display === 'block') { $('fumetto').style.display = 'none'; e.stopImmediatePropagation(); return; } }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('menuFiltro').style.display === 'block') { $('menuFiltro').style.display = 'none'; e.stopImmediatePropagation(); } }, true);
   document.addEventListener('keydown', function (e) {
     if (/INPUT|SELECT|TEXTAREA/.test((e.target || {}).tagName || '') || document.querySelector('.velo.visibile')) return;
