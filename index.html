@@ -183,7 +183,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 21:04</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 21:33</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -623,7 +623,7 @@ function daCompilare(p, eGoogle) {
       F.turno = t; render();
     }; });
     // Il pulsante dice in che modalità sei; cliccandolo la cambi.
-    $('bAdmin').textContent = (ruolo ? (ruolo === 'SUPER' ? 'Super-amministratore' : 'Amministratore Turno ' + ruolo) : 'Visualizzatore') + ' ▾';
+    $('bAdmin').textContent = ruolo ? '⏏ Esci da ' + (ruolo === 'SUPER' ? 'Super-amministratore' : 'Amministratore Turno ' + ruolo) : 'Visualizzatore ▾';
     $('bAdmin').title = ruolo ? 'Sei in modalità amministratore. Clic per uscire e tornare Visualizzatore.' : 'Sei in sola consultazione. Clic per entrare come amministratore (con il PIN).';
     $('bSuper').style.display = ruolo === 'SUPER' ? '' : 'none';
     var ab = $('adminBar');
