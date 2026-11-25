@@ -181,7 +181,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 18:59</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 19:07</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -803,6 +803,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       td.ondblclick = function (e) { e.stopPropagation(); sel = { id: td.getAttribute('data-id'), k: td.getAttribute('data-k') }; mostraSelezione(true); };
     });
     $('contenitore').querySelectorAll('td.info').forEach(function (td) { td.onclick = function (e) {
+      togliRigaGialla();   // interrogare una casella toglie il giallo
       var p = vista().filter(function (x) { return x.id === td.getAttribute('data-id'); })[0], k = td.getAttribute('data-k');
       var f = $('fumetto'), rc = td.getBoundingClientRect(), t = testoFumetto(p, k);
       f.className = 'fumetto ' + t.classe; f.innerHTML = t.html;
