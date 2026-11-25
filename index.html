@@ -78,6 +78,7 @@
   td.cella { text-align:center; min-width:var(--w, 28px); width:var(--w, 28px); max-width:var(--w, 28px); font-weight:700; font-size:15px; padding:4px 0; }
   th.vert, th.freccia { min-width:var(--w, 28px); width:var(--w, 28px); max-width:var(--w, 28px); }
   td.c-nome, td.c-qual { font-size:14px; padding:4px 6px; }
+  tr.persona td.c-nome, tr.persona td.c-qual { cursor:pointer; }
   thead th.c-qual, thead th.c-nome { font-size:13px; }
   .ist-inizio { border-left:3px solid #37474F !important; }
   .inizio-gruppo { border-left:2px solid #7B8794 !important; }
@@ -180,7 +181,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 24/11 20:52</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 18:59</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -608,7 +609,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     $('schede').querySelectorAll('button').forEach(function (b) { b.onclick = function () {
       if (F.solo) lasciaRicerca();
       var t = b.getAttribute('data-t');
-      if (t !== F.turno) azzeraFiltri();   // ogni turno si apre pulito: i filtri del turno lasciato non lo seguono
+      if (t !== F.turno) { azzeraFiltri(); rigaGialla = null; }   // ogni turno si apre pulito: i filtri del turno lasciato non lo seguono
       F.turno = t; render();
     }; });
     // Il pulsante dice in che modalità sei; cliccandolo la cambi.
@@ -781,7 +782,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
       h += '<tr class="sede"><td colspan="' + ncol + '">' + esc(s) + ' — ' + mostrate.filter(function (p) { return !p._nuova; }).length + ' su ' + nReali + '</td></tr>';
       mostrate.forEach(function (p, i) {
         var mod = adminQui && (puoModificare(p) || p._nuova);
-        h += '<tr data-p="' + esc(p.id) + '" class="persona' + (p._nuova ? ' nuova' : '') + (F.solo === p.id ? ' cercata' : '') + '"><td class="fisso c-qual">' + esc(p.qualifica) + '</td><td class="fisso c-nome">' + esc(p.nome) + (p._nuova ? ' (da salvare)' : '') + '</td>';
+        h += '<tr data-p="' + esc(p.id) + '" class="persona' + (p._nuova ? ' nuova' : '') + (F.solo === p.id || rigaGialla === p.id ? ' cercata' : '') + '"><td class="fisso c-qual">' + esc(p.qualifica) + '</td><td class="fisso c-nome">' + esc(p.nome) + (p._nuova ? ' (da salvare)' : '') + '</td>';
         if (adminQui) {
           h += '<td class="fisso c-az az">' + (mod && !p._nuova ? '<button data-az="su" data-id="' + p.id + '" title="Sposta su (tra le stesse qualifiche)">↑</button><button data-az="giu" data-id="' + p.id + '" title="Sposta giù (tra le stesse qualifiche)">↓</button><button data-az="mod" data-id="' + p.id + '" title="Modifica nome, qualifica, sede">✎</button><button data-az="del" data-id="' + p.id + '" title="Togli dal turno (resta nella banca dati come Non assegnato)">🗑</button>' : (p._nuova ? '<button data-az="annullaNuova" data-id="' + p.id + '" title="Non aggiungere">✕</button>' : '')) + '</td>';
         }
@@ -1065,6 +1066,7 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
     if (nuovo) { sel = { id: nuovo.getAttribute('data-id'), k: nuovo.getAttribute('data-k') }; mostraSelezione(false); assicuraVisibile(nuovo); }
   }
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('fumetto').style.display === 'block') { $('fumetto').style.display = 'none'; e.stopImmediatePropagation(); return; } }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && rigaGialla && !document.querySelector('.visibile')) { togliRigaGialla(); e.stopImmediatePropagation(); } }, true);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && $('menuFiltro').style.display === 'block') { $('menuFiltro').style.display = 'none'; e.stopImmediatePropagation(); } }, true);
   document.addEventListener('keydown', function (e) {
     if (/INPUT|SELECT|TEXTAREA/.test((e.target || {}).tagName || '') || document.querySelector('.velo.visibile')) return;
@@ -1225,6 +1227,18 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
   $('bAnnulla').onclick = function () { if (confirm('Annullare tutte le modifiche non salvate?')) { pend = { mod: {}, nuove: [], rimosse: [] }; render(); } };
   window.addEventListener('beforeunload', function (e) { if (nPend()) { e.preventDefault(); e.returnValue = ''; } });
 
+  // Clic sul nome o sulla qualifica: la riga si colora di giallo per seguirla con l'occhio.
+  // Secondo clic sullo stesso nome, clic altrove, Esc o cambio turno la tolgono.
+  var rigaGialla = null;
+  function segnaRiga() {
+    $('contenitore').querySelectorAll('tr.persona').forEach(function (tr) { var id = tr.getAttribute('data-p'); tr.classList.toggle('cercata', id === rigaGialla || id === F.solo); });
+  }
+  function togliRigaGialla() { if (rigaGialla) { rigaGialla = null; segnaRiga(); } }
+  document.addEventListener('click', function (e) {
+    var tdNome = e.target.closest && e.target.closest('tr.persona td.c-nome, tr.persona td.c-qual');
+    if (tdNome) { var id = tdNome.parentNode.getAttribute('data-p'); rigaGialla = rigaGialla === id ? null : id; segnaRiga(); }
+    else togliRigaGialla();
+  });
   document.addEventListener('click', function (e) {
     $('fumetto').style.display = 'none'; $('menuFiltro').style.display = 'none';
     if (!$('popCella').contains(e.target)) chiudiSelezione();
