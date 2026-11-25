@@ -183,7 +183,7 @@
   <div>
     <h1>Specializzazioni Personale VF Pordenone</h1>
     <div class="sotto" id="prospetto"></div>
-    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 21:00</span>
+    <span class="sotto" style="opacity:.6;white-space:nowrap">v. 25/11 21:04</span>
   </div>
   <span class="pill" id="semaforo"><span class="pall rosso"></span><span>…</span></span>
   <span class="spazio"></span>
@@ -206,7 +206,7 @@
   <button id="bAzzera">✕ Togli tutti i filtri</button>
   <button id="bIstruttori">Istruttori ▶</button>
   <span id="conteggio" style="font-size:13px;color:var(--tenue)"></span>
-  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · <span class="ist-leg"></span> istruttore · <span class="da-compilare-leg">Nome</span> = da compilare · clic = dettagli</span>
+  <span class="legenda-breve">Le colonne con <b>●</b> si aggiornano da sole ogni mattina dal file Google <b>«Personale Operativo Specializzato»</b>: <b class="op">X</b> operativo · <b class="sosp">X</b> NON operativo · <b class="nd">X</b> in attesa di controllo · <b class="lim">L</b> = limitato · <span class="ist-leg"></span> istruttore · <span class="da-compilare-leg">Nome rosso</span> = da compilare · clic = dettagli</span>
 </section>
 <div id="adminBar" class="admin-bar" style="display:none"></div>
 <div id="avvisoManuale" class="avviso" style="display:none"></div>
@@ -428,9 +428,10 @@ function eIstruttore(p, key) { return istruttoriDi(key).some(function (i) { retu
 
 // Persona a cui un amministratore non ha ancora inserito nessuna specializzazione a mano
 // (i dati che arrivano da soli dal Prospetto non contano).
-function daCompilare(p) {
+// eGoogle(k) dice se la colonna è una di quelle ● che arrivano dal Prospetto: quelle non contano.
+function daCompilare(p, eGoogle) {
   var s = p.spec || {};
-  return !Object.keys(s).some(function (k) { return s[k]; });
+  return !Object.keys(s).some(function (k) { return s[k] && !(eGoogle && eGoogle(k)); });
 }
 
 
@@ -792,7 +793,7 @@ function daCompilare(p) {
       mostrate.forEach(function (p, i) {
         var mod = adminQui && (puoModificare(p) || p._nuova);
         h += '<tr data-p="' + esc(p.id) + '" class="persona' + (p._nuova ? ' nuova' : '') + (F.solo === p.id || rigaGialla === p.id ? ' cercata' : '') + '">' + (function () {
-          var dc = daCompilare(p), cl = dc ? ' da-compilare' : '', ti = dc ? ' title="Specializzazioni non ancora compilate da un amministratore"' : '';
+          var dc = daCompilare(p, isGoogle), cl = dc ? ' da-compilare' : '', ti = dc ? ' title="Specializzazioni non ancora compilate da un amministratore"' : '';
           return '<td class="fisso c-qual' + cl + '"' + ti + '>' + esc(p.qualifica) + '</td><td class="fisso c-nome' + cl + '"' + ti + '>';
         })() + esc(p.nome) + (p._nuova ? ' (da salvare)' : '') + '</td>';
         if (adminQui) {
